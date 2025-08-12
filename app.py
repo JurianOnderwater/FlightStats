@@ -239,7 +239,7 @@ def get_flight_data():
     route_list = []
     for key, data in route_counts.items():
         if key in route_counts:  # Check if key was added (i.e., coords were found)
-            count, weight = data["count"], 2 + ((data["count"] - 1) // 2)
+            count, weight = data["count"], 0.5 + ((data["count"]))
             route_list.append(
                 {
                     "airport1": {

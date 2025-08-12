@@ -1,5 +1,49 @@
 // static/js/map.js
 
+/**
+ * Calculates a series of points along a great-circle arc.
+ * @param {L.LatLng} start - The starting latitude/longitude.
+ * @param {L.LatLng} end - The ending latitude/longitude.
+ * @returns {L.LatLng[]} An array of points for the polyline.
+ */
+function getGreatCirclePoints(start, end) {
+    const points = [];
+    const numPoints = 360; // Increase for a smoother curve
+
+    // Convert lat/lng to radians
+    const lat1 = start.lat * Math.PI / 180;
+    const lon1 = start.lng * Math.PI / 180;
+    const lat2 = end.lat * Math.PI / 180;
+    const lon2 = end.lng * Math.PI / 180;
+
+    // Calculate the angular distance between the two points
+    const d = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin((lat1 - lat2) / 2), 2) + 
+        Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin((lon1 - lon2) / 2), 2)));
+
+    for (let i = 0; i <= numPoints; i++) {
+        const f = i / numPoints;
+        if (Math.sin(d) === 0) { // Handle antipodal points
+            points.push([start.lat, start.lng]);
+            continue;
+        }
+        const A = Math.sin((1 - f) * d) / Math.sin(d);
+        const B = Math.sin(f * d) / Math.sin(d);
+
+        // Calculate x, y, z coordinates
+        const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
+        const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
+        const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+
+        // Convert back to lat/lng
+        const lat = Math.atan2(z, Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))) * 180 / Math.PI;
+        const lon = Math.atan2(y, x) * 180 / Math.PI;
+
+        points.push([lat, lon]);
+    }
+    return points;
+}
+
+
 document.addEventListener('DOMContentLoaded', function () {
     const map = L.map('map').setView([20, 0], 2);
 
@@ -9,9 +53,9 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Object to hold our map layers, keyed by year
     const layersByYear = {};
-    const loader = document.getElementById('loader-container'); // Get the loader
+    const loader = document.getElementById('loader-container');
 
-    // --- Show the loader before fetching data ---
+    // Show the loader before fetching data
     if (loader) {
         loader.style.display = 'flex';
     }
@@ -29,14 +73,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // --- Populate Hero Stats ---
+            // --- Populate All Stats ---
             const hero = data.stats.hero_stats || {};
             document.getElementById('hero-flights').textContent = hero.total_flights || 0;
             document.getElementById('hero-countries').textContent = hero.total_countries || 0;
             document.getElementById('hero-airports').textContent = hero.total_airports || 0;
             document.getElementById('hero-routes').textContent = hero.total_routes || 0;
 
-            // --- Populate Distance & Time Stats ---
             const dist = data.stats.distance_stats || {};
             document.getElementById('total-km').textContent = Math.round(dist.total_km || 0).toLocaleString();
             document.getElementById('total-miles').textContent = Math.round(dist.total_miles || 0).toLocaleString();
@@ -49,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('total-weeks').textContent = (time.total_weeks || 0).toFixed(1);
             document.getElementById('total-months').textContent = (time.total_months || 0).toFixed(1);
 
-            // --- Populate Top 10 Lists ---
             const topAirportsList = document.getElementById('top-airports-list');
             topAirportsList.innerHTML = '';
             (data.stats.top_airports || []).forEach(airport => {
@@ -74,15 +116,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 const airport2 = route.airport2;
 
                 if (airport1 && airport2) {
-                    const line = L.polyline([airport1.coords, airport2.coords], {
-                        color: lineColour, weight: route.weight, opacity: 0.7
+                    const startPoint = L.latLng(airport1.coords[0], airport1.coords[1]);
+                    const endPoint = L.latLng(airport2.coords[0], airport2.coords[1]);
+
+                    const curvePoints = getGreatCirclePoints(startPoint, endPoint);
+
+                    const line = L.polyline(curvePoints, {
+                        color: lineColour, weight: route.weight, opacity: 0.8
                     });
                     
                     const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
                     const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
 
-                    const startDot = L.circleMarker(airport1.coords, markerOptions).bindTooltip(airport1.iata, tooltipOptions);
-                    const endDot = L.circleMarker(airport2.coords, markerOptions).bindTooltip(airport2.iata, tooltipOptions);
+                    const startDot = L.circleMarker(startPoint, markerOptions).bindTooltip(airport1.iata, tooltipOptions);
+                    const endDot = L.circleMarker(endPoint, markerOptions).bindTooltip(airport2.iata, tooltipOptions);
                     
                     const routeLayer = L.featureGroup([line, startDot, endDot]);
 
@@ -122,10 +169,8 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(error => console.error('Error fetching flight data:', error))
         .finally(() => {
-            // --- Hide the loader when the fetch is complete ---
             if (loader) {
                 loader.style.display = 'none';
             }
-        });;
-        
+        });
 });
