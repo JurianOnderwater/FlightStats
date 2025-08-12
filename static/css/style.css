@@ -216,6 +216,9 @@ md-top-app-bar {
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 16px;
     margin-top: 16px;
+    margin-left: 16px;
+    margin-right: 16px;
+    margin-bottom: 16px;
 }
 
 
