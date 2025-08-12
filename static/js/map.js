@@ -9,6 +9,12 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Object to hold our map layers, keyed by year
     const layersByYear = {};
+    const loader = document.getElementById('loader-container'); // Get the loader
+
+    // --- Show the loader before fetching data ---
+    if (loader) {
+        loader.style.display = 'flex';
+    }
 
     fetch('/api/data')
         .then(response => {
@@ -61,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             // --- Store Map Layers by Year ---
-            const lineColour = '#000000';
+            const lineColour = '#4f6353';
             data.routes.forEach(route => {
                 const year = route.most_recent_year;
                 const airport1 = route.airport1;
@@ -114,5 +120,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         })
-        .catch(error => console.error('Error fetching flight data:', error));
+        .catch(error => console.error('Error fetching flight data:', error))
+        .finally(() => {
+            // --- Hide the loader when the fetch is complete ---
+            if (loader) {
+                loader.style.display = 'none';
+            }
+        });;
+        
 });

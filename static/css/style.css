@@ -54,6 +54,9 @@
     --md-sys-typescale-headline-medium-font: 'Roboto Flex';
     --md-sys-typescale-headline-small-font: 'Roboto Flex';
 
+    /* --- Material 3 Shape Theme --- */
+    --md-circular-progress-size: 108px;
+
     /* Specifically override the "Display" font for our main title to use Serif */
     --md-sys-typescale-display-large-font: 'Roboto Serif';
     --md-sys-typescale-display-medium-font: 'Roboto Serif';
@@ -101,7 +104,7 @@ md-top-app-bar {
     width: 100%;
 }
 #map {
-    height: 50vh;
+    height: 60vh;
     border-radius: 16px;
 }
 .map-container md-fab {
@@ -140,6 +143,22 @@ md-top-app-bar {
     /* Add a subtle stroke to make text more readable on any background */
     text-shadow: -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF, 1px 1px 0 #FFF;
 }
+/* Map loading indicator */
+
+.loader-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none; /* Hidden by default */
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(251, 253, 247, 0.7); /* A semi-transparent overlay using your theme's background colour */
+    z-index: 1500; /* Ensure it's on top of the map */
+    border-radius: 16px; /* Match the map's border-radius */
+}
+
 
 /* --- Chips --- */
 .chip-container {
