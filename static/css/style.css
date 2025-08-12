@@ -39,7 +39,7 @@
     --md-sys-color-surface-container-high: #e7e9e4;
     --md-sys-color-surface-container-highest: #e1e3de;
 
-    /* --- NEW: Material 3 Typography Theme --- */
+    /* --- Material 3 Typography Theme --- */
     /* Set the default font for most text components to Roboto Flex */
     --md-sys-typescale-body-large-font: 'Roboto Flex';
     --md-sys-typescale-body-medium-font: 'Roboto Flex';
@@ -77,7 +77,25 @@ md-top-app-bar {
     border-bottom: 1px solid var(--md-sys-color-outline-variant);
 }
 
-/* --- Map Page --- */
+/* --- Title Card --- */
+
+.title-card {
+    padding: 24px 16px 16px 16px;
+    text-align: left;
+}
+
+.title-card h1 {
+    /* Change the font-family to Roboto Serif */
+    font-family: 'Roboto Serif', serif;
+    font-size: 57px;
+    font-weight: 200;
+    line-height: 64px;
+    letter-spacing: -0.25px;
+    margin: 0;
+    color: var(--md-sys-color-primary);
+}
+
+/* --- Map --- */
 .map-container {
     position: relative;
     width: 100%;
@@ -92,22 +110,6 @@ md-top-app-bar {
     right: 24px;
     z-index: 1000; /* Ensure FAB is above the map */
 }
-
-/* Stats */
-.stats-list {
-    padding-left: 20px;
-    margin-top: 8px;
-    line-height: 1.6;
-}
-.stats-card {
-    background-color: var(--md-sys-color-surface-container-low);
-    padding: 16px;
-    border-radius: 12px;
-    margin-top: 16px;
-}
-.stats-card h2 { margin-top: 0; }
-
-
 .legend {
     line-height: 18px;
     color: var(--md-sys-color-on-surface);
@@ -126,7 +128,79 @@ md-top-app-bar {
     border-radius: 4px;
 }
 
-/* --- Form Page --- */
+/* Airport labels */
+.airport-label {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: black;
+    opacity: 0.8;
+    font-size: 10px;
+    font-weight: bold;
+    /* Add a subtle stroke to make text more readable on any background */
+    text-shadow: -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF, 1px 1px 0 #FFF;
+}
+
+/* --- Chips --- */
+.chip-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 0;
+}
+
+/* --- Hero Stats --- */
+.hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    padding: 24px 0;
+    gap: 20px;
+}
+
+.hero-stat-item {
+    text-align: center;
+}
+
+.hero-stat-number {
+    /* M3 "Headline Medium" type style */
+    font-family: 'Roboto Flex', sans-serif;
+    font-size: 28px;
+    font-weight: 400;
+    line-height: 36px;
+    color: var(--md-sys-color-primary);
+}
+
+.hero-stat-label {
+    margin: 0;
+    font-size: 14px;
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+/* --- Stats Cards --- */
+.stats-list {
+    padding-left: 20px;
+    margin-top: 8px;
+    line-height: 1.6;
+}
+.stats-card {
+    background-color: var(--md-sys-color-surface-container-low);
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+}
+.stats-card h2 { margin-top: 0; }
+.stats-grid {
+    display: grid;
+    /* Create responsive columns */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+
+/* --- Add Flight Page --- */
 .form-card {
     max-width: 500px;
     margin: 24px auto;
@@ -145,7 +219,7 @@ md-top-app-bar {
     margin-top: 16px;
 }
 
-/* --- Table Page --- */
+/* --- Flight Overview Page --- */
 .table-card {
     margin: 24px auto;
     padding: 16px;
@@ -169,14 +243,7 @@ th {
     color: var(--md-sys-color-on-surface-variant);
 }
 
-#add-fab {
-    position: fixed; /* Change this from absolute to fixed */
-    bottom: 24px;
-    right: 24px;
-    z-index: 1000; 
-}
 
-/* Add these styles to the bottom of style.css */
 
 /* Bottom Navigation */
 main {
@@ -184,8 +251,6 @@ main {
     padding-bottom: 80px; 
 }
 
-/* In static/css/style.css */
-/* REPLACE all previous footer-related styles with this block */
 
 footer {
     position: fixed;
@@ -201,7 +266,14 @@ footer {
     pointer-events: none;
 }
 
-/* Position the FAB absolutely to the left, independent of other elements */
+/* Add flight button */
+#add-fab {
+    position: fixed; /* Change this from absolute to fixed */
+    bottom: 24px;
+    right: 24px;
+    z-index: 1000; 
+}
+
 #add-flight-fab {
     position: absolute;
     left: 16px;
@@ -209,9 +281,7 @@ footer {
     pointer-events: auto;
 }
 
-/* In static/css/style.css */
-/* REPLACE the existing rules for .segmented-nav and .nav-segment */
-
+/* Segmented Navigation */
 .segmented-nav {
     display: flex;
     justify-content: center;
@@ -235,14 +305,12 @@ footer {
     /* Ensure there is no border-left from the previous style */
     border-left: none; 
 }
-
-/* This rule remains the same, but is included for completeness */
 .nav-segment.active {
     background-color: var(--md-sys-color-secondary-container);
     color: var(--md-sys-color-on-secondary-container);
 }
 
-/* Add these stylzes for the Flatpickr date picker theme */
+/* --- Calendar ---  !!! NOT WORKING YET !!*/
 
 .flatpickr-calendar {
     background: var(--md-sys-color-surface-container-high);
@@ -282,7 +350,7 @@ footer {
     width: 100%;
 }
 
-/* Add these styles to the bottom of style.css */
+/* --- Flight Edit Page --- */
 
 .edit-cell {
     width: 60px; /* Give the cell a fixed width */
@@ -299,59 +367,7 @@ tr:hover .edit-btn {
     opacity: 1;
 }
 
-.stats-grid {
-    display: grid;
-    /* Create responsive columns */
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 16px;
-    margin-top: 16px;
-}
-
-/* Title Card */
-
-.title-card {
-    padding: 24px 16px 16px 16px;
-    text-align: left;
-}
-
-.title-card h1 {
-    /* Change the font-family to Roboto Serif */
-    font-family: 'Roboto Serif', serif;
-    font-size: 57px;
-    font-weight: 200;
-    line-height: 64px;
-    letter-spacing: -0.25px;
-    margin: 0;
-    color: var(--md-sys-color-primary);
-}
-
-/* In style.css */
-/* REPLACE the old button font rule with this more specific one */
-
-/*
-  This uses CSS Custom Properties to set the font family
-  inside the Material components, which is the correct way to
-  override their internal styles.
-*/
-md-fab,
-md-filled-button,
-md-outlined-button,
-md-text-button {
-    --md-sys-typescale-label-large-font: 'Roboto Flex';
-    --md-filled-button-label-text-font: 'Roboto Flex';
-    --md-outlined-button-label-text-font: 'Roboto Flex';
-    --md-text-button-label-text-font: 'Roboto Flex';
-    --md-fab-label-text-font: 'Roboto Flex';
-}
-/* Ensure Material text fields use the correct sans-serif font */
-md-outlined-text-field {
-    --md-outlined-field-label-text-font: 'Roboto Flex';
-    --md-outlined-field-input-text-font: 'Roboto Flex';
-}
-
 /* Delete button */
-
-/* Make the form actions space out correctly */
 .form-actions {
     display: flex;
     justify-content: space-between;
@@ -375,52 +391,32 @@ md-outlined-text-field {
     --md-icon-button-pressed-state-layer-color: var(--md-sys-color-error);
 }
 
-/* Chips */
-.chip-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px 0;
+
+
+/*
+  This uses CSS Custom Properties to set the font family
+  inside the Material components, to override their 
+  internal styles.
+*/
+md-fab,
+md-filled-button,
+md-outlined-button,
+md-text-button {
+    --md-sys-typescale-label-large-font: 'Roboto Flex';
+    --md-filled-button-label-text-font: 'Roboto Flex';
+    --md-outlined-button-label-text-font: 'Roboto Flex';
+    --md-text-button-label-text-font: 'Roboto Flex';
+    --md-fab-label-text-font: 'Roboto Flex';
+}
+/* Ensure Material text fields use the correct sans-serif font */
+md-outlined-text-field {
+    --md-outlined-field-label-text-font: 'Roboto Flex';
+    --md-outlined-field-input-text-font: 'Roboto Flex';
 }
 
-/* Add these styles to style.css */
-.hero-stats {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
-    padding: 24px 0;
-    gap: 20px;
-}
 
-.hero-stat-item {
-    text-align: center;
-}
 
-.hero-stat-number {
-    /* M3 "Headline Medium" type style */
-    font-family: 'Roboto Flex', sans-serif;
-    font-size: 28px;
-    font-weight: 400;
-    line-height: 36px;
-    color: var(--md-sys-color-primary);
-}
 
-.hero-stat-label {
-    margin: 0;
-    font-size: 14px;
-    color: var(--md-sys-color-on-surface-variant);
-}
 
-/* Airport labels */
-.airport-label {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    color: black;
-    opacity: 0.8;
-    font-size: 10px;
-    font-weight: bold;
-    /* Add a subtle stroke to make text more readable on any background */
-    text-shadow: -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF, 1px 1px 0 #FFF;
-}
+
+
