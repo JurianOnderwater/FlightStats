@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}All Flights{% endblock %}
+
+{% block content %}
+<div class="table-card">
+    <h1>All Flights 📜</h1>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Distance (km)</th>
+                    <th>Date</th>
+                    <th></th> </tr>
+            </thead>
+            <tbody>
+                {% for flight in flights %}
+                <tr>
+                    <td>{{ flight.origin_flag }} {{ flight.origin }}</td>
+                    <td>{{ flight.destination_flag }} {{ flight.destination }}</td>
+                    <td>{{ flight.distance | round | int }}</td>
+                    <td>{{ flight.date }}</td>
+                    <td class="edit-cell">
+                        <a href="{{ url_for('edit_flight', flight_id=flight.id) }}">
+                            <md-icon-button class="edit-btn">
+                                <span class="material-symbols-outlined">edit</span>
+                            </md-icon-button>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5">No flights have been added yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

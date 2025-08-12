@@ -1,0 +1,12 @@
+# Obligatory DS_Store
+.DS_Store
+
+# Python
+__pycache__
+*.pyc
+
+# SQLite
+*.db
+
+# Logs
+*.log

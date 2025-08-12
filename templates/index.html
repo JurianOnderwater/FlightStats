@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Map View{% endblock %}
+
+{% block content %}
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+
+    <div id="chip-container" class="chip-container"></div>
+
+    <div class="hero-stats">
+        <div class="hero-stat-item">
+            <span id="hero-flights" class="hero-stat-number">0</span>
+            <p class="hero-stat-label">Flights</p>
+        </div>
+        <div class="hero-stat-item">
+            <span id="hero-countries" class="hero-stat-number">0</span>
+            <p class="hero-stat-label">Countries</p>
+        </div>
+        <div class="hero-stat-item">
+            <span id="hero-airports" class="hero-stat-number">0</span>
+            <p class="hero-stat-label">Airports</p>
+        </div>
+        <div class="hero-stat-item">
+            <span id="hero-routes" class="hero-stat-number">0</span>
+            <p class="hero-stat-label">Routes</p>
+        </div>
+    </div>
+    
+
+    <div class="stats-grid">
+        <div class="stats-card">
+            <h2>Distance 🌍</h2>
+            <p><strong>Total Kilometres:</strong> <span id="total-km">0</span> km</p>
+            <p><strong>Total Miles:</strong> <span id="total-miles">0</span> mi</p>
+            <p><strong>Earth Circumnavigations:</strong> <span id="earth-circumnavigations">0</span>x</p>
+            <p><strong>Journey to the Moon:</strong> <span id="percent-to-moon">0</span>%</p>
+        </div>
+
+        <div class="stats-card">
+            <h2>Time (Estimated) ⏱️</h2>
+            <p><strong>Total Hours Flown:</strong> <span id="total-hours">0</span></p>
+            <p><strong>Total Days Flown:</strong> <span id="total-days">0</span></p>
+            <p><strong>Total Weeks Flown:</strong> <span id="total-weeks">0</span></p>
+            <p><strong>Total Months Flown:</strong> <span id="total-months">0</span></p>
+        </div>
+
+        <div class="stats-card">
+            <h2>Top 10 Airports 🏆</h2>
+            <ol id="top-airports-list" class="stats-list">
+                </ol>
+        </div>
+        
+        <div class="stats-card">
+            <h2>Top 10 Routes ✈️</h2>
+            <ol id="top-routes-list" class="stats-list">
+                </ol>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-arc/1.0.5/leaflet-arc.min.js"></script>
+    
+    <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

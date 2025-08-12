@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Add a New Flight{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1>Add a New Flight</h1>
+    <form action="{{ url_for('add_flight') }}" method="post" class="add-form">
+        <md-outlined-text-field label="Origin (IATA Code)" name="origin" maxlength="3" required></md-outlined-text-field>
+        <md-outlined-text-field label="Destination (IATA Code)" name="destination" maxlength="3" required></md-outlined-text-field>
+        
+        <md-outlined-text-field label="Date" name="date" type="date" required id="date-field-wrapper">
+            <span slot="leading-icon" class="material-symbols-outlined">calendar_today</span>
+            <input type="text" placeholder="Select a date...">
+        </md-outlined-text-field>
+        
+        <div class="form-actions">
+            <md-filled-button type="submit">Add Flight</md-filled-button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/flatpickr/4.6.13/flatpickr.min.js"></script>
+
+    <script>
+        // 🚦 Wait for the entire HTML document to be ready first
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateFieldWrapper = document.querySelector('#date-field-wrapper');
+
+            if (dateFieldWrapper) {
+                // Now, wait for the Material component to finish its own setup
+                dateFieldWrapper.updateComplete.then(() => {
+                    const inputElement = dateFieldWrapper.querySelector('input');
+                    
+                    flatpickr(inputElement, {
+                        allowInput: false, 
+                        altInput: true,
+                        altFormat: "F j, Y",
+                        dateFormat: "dd-mm-YYYY",
+                    });
+                });
+            }
+        });
+    </script>
+{% endblock %}
