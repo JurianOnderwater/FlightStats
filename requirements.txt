@@ -1,4 +1,6 @@
-Flask 
-Flask-SQLAlchemy 
-pandas 
+Flask
+Flask-SQLAlchemy
+pandas
 haversine
+gunicorn
+psycopg2-binary
