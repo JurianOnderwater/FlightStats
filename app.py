@@ -126,6 +126,17 @@ def edit_flight(flight_id):
 
     return render_template("edit_flight.html", flight=flight_to_edit)
 
+# Add this function to app.py
+
+
+@app.route("/delete/<int:flight_id>", methods=["POST"])
+def delete_flight(flight_id):
+    """Deletes a flight from the database."""
+    flight_to_delete = Flight.query.get_or_404(flight_id)
+    db.session.delete(flight_to_delete)
+    db.session.commit()
+    return redirect(url_for("view_flights"))
+
 
 @app.route("/api/data")
 def get_flight_data():
