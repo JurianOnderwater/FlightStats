@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 import pandas as pd
 import haversine as hs
 from database import db, Flight, init_db
+from werkzeug.utils import secure_filename
 
 # --- App Initialization ---
 app = Flask(__name__)
+app.secret_key = "sijiv12_@@$@T$ER#VC"  # Change this to a random string
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///flights.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 init_db(app)
@@ -281,3 +283,51 @@ def get_flight_data():
         "hero_stats": hero_stats,
     }
     return jsonify({"routes": route_list, "stats": stats})
+
+
+
+# --- Import Routes ---
+@app.route("/import", methods=["GET", "POST"])
+def import_flights():
+    if request.method == "POST":
+        if "file" not in request.files:
+            flash("No file part")
+            return redirect(request.url)
+        file = request.files["file"]
+        if file.filename == "":
+            flash("No selected file")
+            return redirect(request.url)
+        if file and file.filename.endswith(".csv"):
+            try:
+                df = pd.read_csv(file.stream)
+                new_flights = []
+                for index, row in df.iterrows():
+                    origin = row["origin"].upper()
+                    destination = row["destination"].upper()
+                    date = row["date"]
+
+                    origin_coords = get_coords(origin)
+                    dest_coords = get_coords(destination)
+
+                    if origin_coords and dest_coords:
+                        distance = hs.haversine(
+                            origin_coords, dest_coords, unit=hs.Unit.KILOMETERS
+                        )
+                        new_flights.append(
+                            Flight(
+                                origin=origin,
+                                destination=destination,
+                                date=date,
+                                distance=distance,
+                            )
+                        )
+
+                db.session.add_all(new_flights)
+                db.session.commit()
+                flash(f"Successfully imported {len(new_flights)} flights!")
+            except Exception as e:
+                flash(f"An error occurred during import: {e}")
+
+            return redirect(url_for("view_flights"))
+
+    return render_template("import.html")

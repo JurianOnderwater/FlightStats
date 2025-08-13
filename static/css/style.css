@@ -375,6 +375,12 @@ footer {
 
 /* --- Flight Edit Page --- */
 
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .edit-cell {
     width: 60px; /* Give the cell a fixed width */
     text-align: center;

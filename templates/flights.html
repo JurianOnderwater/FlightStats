@@ -4,6 +4,9 @@
 {% block content %}
 <div class="table-card">
     <h1>All Flights 📜</h1>
+    <a href="{{ url_for('import_flights') }}">
+        <md-filled-tonal-button>Import CSV</md-filled-tonal-button>
+    </a>
     <div class="table-container">
         <table>
             <thead>

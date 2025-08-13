@@ -4,3 +4,4 @@ pandas
 haversine
 gunicorn
 psycopg2-binary
+sqlite3

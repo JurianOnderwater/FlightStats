@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Import Flights{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h1>Import Flights from CSV 📤</h1>
+    <p>Upload a CSV file with columns: <code>origin</code>, <code>destination</code>, and <code>date</code>.</p>
+    
+    <form method="post" enctype="multipart/form-data" class="add-form">
+        <md-outlined-text-field type="file" name="file" accept=".csv" required></md-outlined-text-field>
+        <div class="form-actions">
+            <md-filled-button type="submit">Upload and Import</md-filled-button>
+        </div>
+    </form>
+</div>
+{% endblock %}
