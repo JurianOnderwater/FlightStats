@@ -3,27 +3,30 @@
 
 {% block content %}
 <div class="table-card">
-    <h1>All Flights 📜</h1>
-    <a href="{{ url_for('import_flights') }}">
-        <md-filled-tonal-button>Import CSV</md-filled-tonal-button>
-    </a>
+    <div class="table-header">
+        <h1>All Flights 📜</h1>
+        <a href="{{ url_for('import_flights') }}">
+            <md-filled-tonal-button>Import CSV</md-filled-tonal-button>
+        </a>
+    </div>
     <div class="table-container">
         <table>
             <thead>
                 <tr>
+                    <th>Date</th>
                     <th>Origin</th>
                     <th>Destination</th>
                     <th>Distance (km)</th>
-                    <th>Date</th>
-                    <th></th> </tr>
+                    <th></th>
+                </tr>
             </thead>
             <tbody>
                 {% for flight in flights %}
                 <tr>
+                    <td>{{ flight.date }}</td>
                     <td>{{ flight.origin_flag }} {{ flight.origin }}</td>
                     <td>{{ flight.destination_flag }} {{ flight.destination }}</td>
                     <td>{{ flight.distance | round | int }}</td>
-                    <td>{{ flight.date }}</td>
                     <td class="edit-cell">
                         <a href="{{ url_for('edit_flight', flight_id=flight.id) }}">
                             <md-icon-button class="edit-btn">
@@ -39,6 +42,40 @@
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+
+    <div class="pagination">
+        {% if pagination.has_prev %}
+            <a href="{{ url_for('view_flights', page=pagination.prev_num) }}">
+                <md-outlined-button>&laquo; Previous</md-outlined-button>
+            </a>
+        {% else %}
+            <md-outlined-button disabled>&laquo; Previous</md-outlined-button>
+        {% endif %}
+
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+            {% if page_num %}
+                {% if pagination.page == page_num %}
+                    <a href="{{ url_for('view_flights', page=page_num) }}">
+                        <md-filled-button>{{ page_num }}</md-filled-button>
+                    </a>
+                {% else %}
+                     <a href="{{ url_for('view_flights', page=page_num) }}">
+                        <md-outlined-button>{{ page_num }}</md-outlined-button>
+                    </a>
+                {% endif %}
+            {% else %}
+                <md-outlined-button disabled>...</md-outlined-button>
+            {% endif %}
+        {% endfor %}
+
+        {% if pagination.has_next %}
+            <a href="{{ url_for('view_flights', page=pagination.next_num) }}">
+                <md-outlined-button>Next &raquo;</md-outlined-button>
+            </a>
+        {% else %}
+            <md-outlined-button disabled>Next &raquo;</md-outlined-button>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

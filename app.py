@@ -44,13 +44,24 @@ def index():
     return render_template("index.html")
 
 
+# In app.py, replace the view_flights function
+
+
 @app.route("/flights")
 def view_flights():
-    """Renders a page with a list of all flights."""
-    all_flights = Flight.query.order_by(Flight.date.desc()).all()
+    """Renders a paginated list of all flights."""
+    # Get the requested page number from the URL query (e.g., /flights?page=2)
+    page = request.args.get("page", 1, type=int)
 
+    # Instead of .all(), we use .paginate() to get a specific page
+    # The 'error_out=False' prevents errors if a user requests a page that doesn't exist
+    pagination = Flight.query.order_by(Flight.date.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+
+    # We now iterate over pagination.items instead of all_flights
     flights_with_flags = []
-    for flight in all_flights:
+    for flight in pagination.items:
         try:
             origin_country = airport_df.loc[flight.origin]["iso_country"]
             dest_country = airport_df.loc[flight.destination]["iso_country"]
@@ -69,7 +80,10 @@ def view_flights():
             }
         )
 
-    return render_template("flights.html", flights=flights_with_flags)
+    # Pass the pagination object AND the processed list to the template
+    return render_template(
+        "flights.html", flights=flights_with_flags, pagination=pagination
+    )
 
 
 def country_code_to_flag(code):
@@ -283,7 +297,6 @@ def get_flight_data():
         "hero_stats": hero_stats,
     }
     return jsonify({"routes": route_list, "stats": stats})
-
 
 
 # --- Import Routes ---

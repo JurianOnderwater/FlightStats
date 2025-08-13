@@ -5,8 +5,9 @@
 __pycache__
 *.pyc
 
-# SQLite
+# Database
 *.db
+*.csv
 
 # Logs
 *.log
