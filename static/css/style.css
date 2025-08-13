@@ -265,6 +265,14 @@ th {
     font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
 }
+/* Loading indicator upload button */
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+    gap: 16px; /* Add a gap for spacing */
+}
 
 /* Pagination */
 .pagination {
