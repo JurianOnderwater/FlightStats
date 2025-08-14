@@ -34,12 +34,15 @@ document.addEventListener('DOMContentLoaded', () => {
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
 
     const viewer = new Cesium.Viewer('cesium-container', {
-        // imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        //     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        //     subdomains: ['a', 'b', 'c', 'd']
-        // }),
+        imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+            subdomains: ['a', 'b', 'c', 'd']
+        }),
         animation: false, timeline: false, geocoder: false, homeButton: false, 
         sceneModePicker: false, baseLayerPicker: false, navigationHelpButton: false, 
         infoBox: false, selectionIndicator: false, fullscreenButton: false,
