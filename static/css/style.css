@@ -98,21 +98,26 @@ md-top-app-bar {
     color: var(--md-sys-color-primary);
 }
 
-/* --- Map --- */
+/* --- Map view --- */
 .map-container {
     position: relative;
     width: 100%;
 }
-#map {
-    height: 60vh;
+/* Map and globe */
+
+.map-container {
+    position: relative;
+    width: 100%;
+    height: 60vh; /* Set a fixed height on the parent container */
     border-radius: 16px;
+    overflow: hidden; /* Ensures children stay within the rounded corners */
 }
-.map-container md-fab {
-    position: absolute;
-    bottom: 24px;
-    right: 24px;
-    z-index: 1000; /* Ensure FAB is above the map */
+#map, #cesium-container {
+    width: 100%;
+    height: 100%; /* Both children will now fill the parent's height */
 }
+
+/* Legend */
 .legend {
     line-height: 18px;
     color: var(--md-sys-color-on-surface);
@@ -142,13 +147,6 @@ md-top-app-bar {
     font-weight: bold;
     /* Add a subtle stroke to make text more readable on any background */
     text-shadow: -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF, 1px 1px 0 #FFF;
-}
-/* Globe view */
-
-/* Ensure Cesium container fills the space */
-#cesium-container {
-    width: 100%;
-    height: 100%;
 }
 
 /* Position the view switcher */

@@ -46,9 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const leafletContainer = document.getElementById('map');
     const cesiumContainer = document.getElementById('cesium-container');
 
-    viewSwitch.addEventListener('click', () => {
-        if (!viewSwitch.selected) { leafletContainer.style.display = 'block'; cesiumContainer.style.display = 'none'; } 
-        else { leafletContainer.style.display = 'none'; cesiumContainer.style.display = 'block'; }
+    // *** THIS IS THE FIX: Change 'click' to 'input' ***
+    viewSwitch.addEventListener('input', () => {
+        if (!viewSwitch.selected) { // 2D Map view
+            leafletContainer.style.display = 'block';
+            cesiumContainer.style.display = 'none';
+        } else { // Globe view
+            leafletContainer.style.display = 'none';
+            cesiumContainer.style.display = 'block';
+        }
     });
     leafletContainer.style.display = 'block';
     cesiumContainer.style.display = 'none';
@@ -82,13 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
                             const year = new Date(flight.date).getFullYear();
-                            const lineColour = '#000000';
+                            const lineColour = '#4f6353';
                             
                             const startPointL = L.latLng(origin.lat, origin.lng);
                             const endPointL = L.latLng(dest.lat, dest.lng);
                             const curvePoints = getGreatCirclePoints(startPointL, endPointL);
                             const leafletLine = L.polyline(curvePoints, { color: lineColour, weight: 2, opacity: 0.7 });
-                            const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
+                            const markerOptions = { radius: 3, fillColor: lineColour, color: "#4f6353", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
                             const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
                             
                             // *** THIS IS THE FIX ***
