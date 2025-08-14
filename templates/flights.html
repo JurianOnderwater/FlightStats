@@ -8,6 +8,7 @@
         <a href="{{ url_for('import_flights') }}">
             <md-filled-tonal-button>Import CSV</md-filled-tonal-button>
         </a>
+        <md-filled-tonal-button id="export-btn">Export to CSV</md-filled-tonal-button>
     </div>
     <div class="table-container">
         <table>
@@ -32,27 +33,52 @@
     document.addEventListener('DOMContentLoaded', async () => {
         const flights = await getAllFlights();
         const tbody = document.getElementById('flights-table-body');
-        tbody.innerHTML = ''; // Clear the "Loading..." message
+        const exportBtn = document.getElementById('export-btn');
 
+        // --- 1. Populate the table (existing logic) ---
+        tbody.innerHTML = ''; 
         if (flights.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4">No flights have been added yet.</td></tr>';
-            return;
+        } else {
+            flights.forEach(flight => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${flight.date}</td>
+                    <td>${flight.origin}</td>
+                    <td>${flight.destination}</td>
+                    <td class="edit-cell">
+                        <a href="/edit/${flight.id}">
+                            <md-icon-button class="edit-btn">
+                                <span class="material-symbols-outlined">edit</span>
+                            </md-icon-button>
+                        </a>
+                    </td>
+                `;
+            });
         }
 
-        flights.forEach(flight => {
-            const row = tbody.insertRow();
-            row.innerHTML = `
-                <td>${flight.date}</td>
-                <td>${flight.origin}</td>
-                <td>${flight.destination}</td>
-                <td class="edit-cell">
-                    <a href="/edit/${flight.id}">
-                        <md-icon-button class="edit-btn">
-                            <span class="material-symbols-outlined">edit</span>
-                        </md-icon-button>
-                    </a>
-                </td>
-            `;
+        // --- 2. Add click listener for the export button ---
+        exportBtn.addEventListener('click', async () => {
+            console.log("Exporting data...");
+            const flightsToExport = await getAllFlights();
+
+            // Create CSV header and rows
+            const header = 'origin,destination,date\n';
+            const rows = flightsToExport.map(f => `${f.origin},${f.destination},${f.date}`);
+            const csvContent = header + rows.join('\n');
+            
+            // Create a Blob and trigger a download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.setAttribute("href", url);
+            a.setAttribute("download", "flights.csv");
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log("Export complete.");
         });
     });
 </script>

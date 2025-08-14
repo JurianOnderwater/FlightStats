@@ -265,6 +265,11 @@ th {
     font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
 }
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
 /* Loading indicator upload button */
 .form-actions {
     display: flex;
@@ -285,6 +290,7 @@ th {
 .pagination a {
     text-decoration: none;
 }
+
 
 
 
