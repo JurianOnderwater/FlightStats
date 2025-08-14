@@ -265,6 +265,15 @@ th {
     font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
 }
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.header-actions md-filled-tonal-button {
+    width: 160px; /* Sets a uniform width for both buttons */
+    --md-filled-tonal-button-container-height: 30px; /* Adjusts the button height. Default is 40px. */
+}
 /* Loading indicator upload button */
 .form-actions {
     display: flex;
@@ -285,6 +294,7 @@ th {
 .pagination a {
     text-decoration: none;
 }
+
 
 
 
