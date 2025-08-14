@@ -26,8 +26,8 @@
             {% block content %}{% endblock %}
         </main>
         <footer>
-            <md-fab variant="tertiary" size="small" aria-label="Add Flight" id="add-flight-fab" data-url="{{ url_for('add_flight') }}">
-                <span slot="icon" class="material-symbols-outlined">add</span>
+            <md-fab variant="secondary" size="small" label="Add Flight" aria-label="Add Flight" id="add-flight-fab" data-url="{{ url_for('add_flight') }}">
+                <span slot="icon" class="material-symbols-outlined">travel</span>
             </md-fab>
             <div class="segmented-nav">
                 <a href="{{ url_for('index') }}" class="nav-segment {% if request.endpoint == 'index' %}active{% endif %}">

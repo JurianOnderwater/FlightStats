@@ -26,7 +26,6 @@ function getGreatCirclePoints(start, end) {
     return points;
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     const map = L.map('map').setView([20, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -55,33 +54,50 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         }
                     });
-                    console.log(`Finished parsing. Found ${airportData.size} airports.`);
 
                     // Now that we have airport data, get the flights from the local DB
                     const allFlights = await getAllFlights();
 
-                    // --- 1. Calculate and Display All Stats using stats.js ---
+                    // --- Calculate stats and update the page ---
                     const uniqueYears = calculateAndDisplayStats(allFlights, airportData);
 
-                    // --- 2. Draw Map Layers and Create Filter Chips ---
-                    const layersByYear = {};
-                    const lineColour = '#000000';
-
+                    // --- NEW: Aggregate flights to get frequency and most recent date ---
+                    const aggregatedRoutes = new Map();
                     allFlights.forEach(flight => {
-                        const origin = airportData.get(flight.origin);
-                        const dest = airportData.get(flight.destination);
+                        const canonicalRoute = [flight.origin, flight.destination].sort().join('-');
+                        if (!aggregatedRoutes.has(canonicalRoute)) {
+                            aggregatedRoutes.set(canonicalRoute, { count: 0, maxDate: '1900-01-01' });
+                        }
+                        const routeData = aggregatedRoutes.get(canonicalRoute);
+                        routeData.count += 1;
+                        if (flight.date > routeData.maxDate) {
+                            routeData.maxDate = flight.date;
+                        }
+                    });
+
+                    // --- Draw Map Layers and Create Filter Chips ---
+                    const layersByYear = {};
+                    const lineColour = '#4f6353'; // Use the new specified colour
+
+                    aggregatedRoutes.forEach((routeData, routeKey) => {
+                        const [iata1, iata2] = routeKey.split('-');
+                        const origin = airportData.get(iata1);
+                        const dest = airportData.get(iata2);
 
                         if (origin && dest) {
-                            const year = new Date(flight.date).getFullYear();
-                            
+                            const year = new Date(routeData.maxDate).getFullYear();
+                            const lineWeight = routeData.count; // Weight is the flight count
+
                             const startPoint = L.latLng(origin.lat, origin.lng);
                             const endPoint = L.latLng(dest.lat, dest.lng);
                             const curvePoints = getGreatCirclePoints(startPoint, endPoint);
 
-                            const line = L.polyline(curvePoints, { color: lineColour, weight: 2, opacity: 0.7 });
+                            const line = L.polyline(curvePoints, { color: lineColour, weight: lineWeight, opacity: 0.7 });
                             const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
-                            const startDot = L.circleMarker(startPoint, markerOptions).bindTooltip(flight.origin);
-                            const endDot = L.circleMarker(endPoint, markerOptions).bindTooltip(flight.destination);
+                            const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
+
+                            const startDot = L.circleMarker(startPoint, markerOptions).bindTooltip(iata1, tooltipOptions);
+                            const endDot = L.circleMarker(endPoint, markerOptions).bindTooltip(iata2, tooltipOptions);
                             const routeLayer = L.featureGroup([line, startDot, endDot]);
 
                             if (!layersByYear[year]) layersByYear[year] = [];
@@ -89,8 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
+                    // --- Create and Add Filter Chips ---
                     const chipContainer = document.getElementById('chip-container');
-                    chipContainer.innerHTML = ''; // Clear any old chips
+                    chipContainer.innerHTML = '';
                     uniqueYears.forEach(year => {
                         const chip = document.createElement('md-filter-chip');
                         chip.label = String(year);
@@ -106,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         chipContainer.appendChild(chip);
                     });
 
+                    // Initially add all layers to the map
                     for (const year in layersByYear) {
                         layersByYear[year].forEach(layer => layer.addTo(map).openTooltip());
                     }
