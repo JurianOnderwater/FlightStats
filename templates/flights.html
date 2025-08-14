@@ -22,66 +22,134 @@
                     <th></th>
                 </tr>
             </thead>
-            <tbody id="flights-table-body">
-                <tr><td colspan="4">Loading flights...</td></tr>
-            </tbody>
+            <tbody id="flights-table-body"></tbody>
         </table>
     </div>
+
+    <div id="pagination-controls" class="pagination"></div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const flights = await getAllFlights();
-        const tbody = document.getElementById('flights-table-body');
-        const exportBtn = document.getElementById('export-btn');
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-        // --- 1. Populate the table (existing logic) ---
-        tbody.innerHTML = ''; 
-        if (flights.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4">No flights have been added yet.</td></tr>';
-        } else {
-            flights.forEach(flight => {
-                const row = tbody.insertRow();
-                row.innerHTML = `
-                    <td>${flight.date}</td>
-                    <td>${flight.origin}</td>
-                    <td>${flight.destination}</td>
-                    <td class="edit-cell">
-                        <a href="/edit/${flight.id}">
-                            <md-icon-button class="edit-btn">
-                                <span class="material-symbols-outlined">edit</span>
-                            </md-icon-button>
-                        </a>
-                    </td>
-                `;
-            });
-        }
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const flightsPerPage = 20;
+            let allFlights = [];
+            let currentPage = 1;
 
-        // --- 2. Add click listener for the export button ---
-        exportBtn.addEventListener('click', async () => {
-            console.log("Exporting data...");
-            const flightsToExport = await getAllFlights();
+            const tbody = document.getElementById('flights-table-body');
+            const paginationControls = document.getElementById('pagination-controls');
+            const exportBtn = document.getElementById('export-btn');
 
-            // Create CSV header and rows
-            const header = 'origin,destination,date\n';
-            const rows = flightsToExport.map(f => `${f.origin},${f.destination},${f.date}`);
-            const csvContent = header + rows.join('\n');
+            function displayPage(page) {
+                currentPage = page;
+                tbody.innerHTML = ''; 
+
+                if (allFlights.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4">No flights have been added yet.</td></tr>';
+                    paginationControls.innerHTML = '';
+                    return;
+                }
+                
+                const startIndex = (page - 1) * flightsPerPage;
+                const endIndex = startIndex + flightsPerPage;
+                const paginatedFlights = allFlights.slice(startIndex, endIndex);
+
+                paginatedFlights.forEach(flight => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${flight.date}</td>
+                        <td>${flight.origin_flag || ''} ${flight.origin}</td>
+                        <td>${flight.destination_flag || ''} ${flight.destination}</td>
+                        <td class="edit-cell">
+                            <a href="/edit/${flight.id}">
+                                <md-icon-button class="edit-btn">
+                                    <span class="material-symbols-outlined">edit</span>
+                                </md-icon-button>
+                            </a>
+                        </td>
+                    `;
+                });
+
+                renderPaginationControls();
+            }
+
+            function renderPaginationControls() {
+                paginationControls.innerHTML = '';
+                const totalPages = Math.ceil(allFlights.length / flightsPerPage);
+
+                if (totalPages <= 1) return;
+
+                const prevButton = document.createElement('md-outlined-button');
+                prevButton.innerHTML = '&laquo; Previous';
+                if (currentPage === 1) prevButton.disabled = true;
+                prevButton.addEventListener('click', () => displayPage(currentPage - 1));
+                paginationControls.appendChild(prevButton);
+
+                const pageInfo = document.createElement('span');
+                pageInfo.textContent = `Page ${currentPage} of ${totalPages}`;
+                pageInfo.style.padding = '0 16px';
+                paginationControls.appendChild(pageInfo);
+
+                const nextButton = document.createElement('md-outlined-button');
+                nextButton.innerHTML = 'Next &raquo;';
+                if (currentPage === totalPages) nextButton.disabled = true;
+                nextButton.addEventListener('click', () => displayPage(currentPage + 1));
+                paginationControls.appendChild(nextButton);
+            }
+
+            async function loadData() {
+                const flightsFromDb = await getAllFlights();
+                const airportCsvText = await fetch('/static/airports.csv').then(res => res.text());
+                
+                // This will now work because Papa is defined
+                Papa.parse(airportCsvText, {
+                    header: true, skipEmptyLines: true,
+                    complete: (results) => {
+                        const airportData = new Map();
+                        results.data.forEach(row => {
+                            if (row.iata_code) airportData.set(row.iata_code, { country: row.iso_country });
+                        });
+
+                        const offset = 127397;
+                        const countryCodeToFlag = (code) => code && code.length === 2 ? String.fromCodePoint(code.charCodeAt(0) + offset) + String.fromCodePoint(code.charCodeAt(1) + offset) : '';
+
+                        allFlights = flightsFromDb.map(flight => {
+                            const originCountry = airportData.get(flight.origin)?.country;
+                            const destCountry = airportData.get(flight.destination)?.country;
+                            return {
+                                ...flight,
+                                origin_flag: countryCodeToFlag(originCountry),
+                                destination_flag: countryCodeToFlag(destCountry)
+                            };
+                        });
+
+                        displayPage(1);
+                    }
+                });
+            }
             
-            // Create a Blob and trigger a download
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.setAttribute("href", url);
-            a.setAttribute("download", "flights.csv");
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            console.log("Export complete.");
+            loadData();
+            
+            exportBtn.addEventListener('click', async () => {
+                const flightsToExport = await getAllFlights();
+                const header = 'origin,destination,date\n';
+                const rows = flightsToExport.map(f => `${f.origin},${f.destination},${f.date}`);
+                const csvContent = header + rows.join('\n');
+                
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.setAttribute("href", url);
+                a.setAttribute("download", "flights.csv");
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
         });
-    });
-</script>
+    </script>
 {% endblock %}
