@@ -5,9 +5,21 @@
 <div class="form-card">
     <h1>Add a New Flight</h1>
     <form class="add-form" id="add-form">
-        <md-outlined-text-field label="Origin (IATA Code)" name="origin" maxlength="3" required></md-outlined-text-field>
-        <md-outlined-text-field label="Destination (IATA Code)" name="destination" maxlength="3" required></md-outlined-text-field>
+        <div class="input-row">
+            <div class="input-group">
+                <label for="origin-input">Origin</label>
+                <input class="styled-input" type="text" id="origin-input" list="airport-list" placeholder="Type a city or code" required>
+            </div>
+            <div class="input-group">
+                <label for="destination-input">Destination</label>
+                <input class="styled-input" type="text" id="destination-input" list="airport-list" placeholder="Type a city or code" required>
+            </div>
+        </div>
+    
+        <datalist id="airport-list"></datalist>
+        
         <md-outlined-text-field label="Date" type="date" name="date" required></md-outlined-text-field>
+    
         <div class="form-actions">
             <md-filled-button type="submit">Add Flight</md-filled-button>
         </div>
@@ -17,23 +29,38 @@
 
 {% block scripts %}
 <script>
-    document.getElementById('add-form').addEventListener('submit', async (event) => {
-        event.preventDefault(); // Prevent the default form submission
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        
-        const newFlight = {
-            origin: formData.get('origin').toUpperCase(),
-            destination: formData.get('destination').toUpperCase(),
-            date: formData.get('date')
-            // Note: distance will be calculated when the map is rendered.
-        };
-        
-        await addFlight(newFlight);
-        
-        // Redirect to the flight list after adding
-        window.location.href = "{{ url_for('view_flights') }}";
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Populate the datalist with suggestions ---
+        const airportDataString = localStorage.getItem('airportData');
+        if (airportDataString) {
+            const airportData = new Map(JSON.parse(airportDataString));
+            const datalist = document.getElementById('airport-list');
+            
+            for (const [iata, data] of airportData.entries()) {
+                const option = document.createElement('option');
+                option.value = iata; // The value when selected is the IATA code
+                // The visible text is more descriptive
+                option.textContent = `${data.city || data.name}, ${data.country} (${iata})`;
+                datalist.appendChild(option);
+            }
+        }
+
+        // --- Handle form submission ---
+        const addForm = document.getElementById('add-form');
+        addForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const originIata = document.getElementById('origin-input').value.toUpperCase();
+            const destinationIata = document.getElementById('destination-input').value.toUpperCase();
+
+            const newFlight = {
+                origin: originIata,
+                destination: destinationIata,
+                date: addForm.date.value
+            };
+            
+            await addFlight(newFlight);
+            window.location.href = "{{ url_for('view_flights') }}";
+        });
     });
 </script>
 {% endblock %}

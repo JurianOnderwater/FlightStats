@@ -80,10 +80,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     results.data.forEach(row => {
                         if (row.iata_code && row.latitude_deg && row.longitude_deg) {
                             airportData.set(row.iata_code, {
-                                lat: parseFloat(row.latitude_deg), lng: parseFloat(row.longitude_deg), country: row.iso_country
+                                lat: parseFloat(row.latitude_deg), 
+                                lng: parseFloat(row.longitude_deg), 
+                                country: row.iso_country,
+                                name: row.name, // Also store the name for the datalist
+                                city: row.municipality // And the city
                             });
                         }
                     });
+                    localStorage.setItem('airportData', JSON.stringify(Array.from(airportData.entries())));
+
+                    console.log(`Finished parsing and cached ${airportData.size} airports.`);
+                    
 
                     const allFlights = await getAllFlights();
                     const uniqueYears = calculateAndDisplayStats(allFlights, airportData);
