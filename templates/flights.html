@@ -5,10 +5,12 @@
 <div class="table-card">
     <div class="table-header">
         <h1>All Flights 📜</h1>
-        <a href="{{ url_for('import_flights') }}">
-            <md-filled-tonal-button>Import CSV</md-filled-tonal-button>
-        </a>
-        <md-filled-tonal-button id="export-btn">Export to CSV</md-filled-tonal-button>
+        <div class="header-actions">
+            <a href="{{ url_for('import_flights') }}">
+                <md-filled-tonal-button>Import CSV</md-filled-tonal-button>
+            </a>
+            <md-filled-tonal-button id="export-btn">Export to CSV</md-filled-tonal-button>
+        </div>
     </div>
     <div class="table-container">
         <table>
