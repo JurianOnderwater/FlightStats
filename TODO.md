@@ -33,3 +33,4 @@ A list of potential features and improvements for the application.
 
 - [ ] **Dark Mode** 🌙
   > Implement a toggle that switches the custom green theme to a dark variant using Material 3's theming capabilities.
+- [ ] **Mobile friendly UI**
