@@ -6,43 +6,45 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&family=Roboto+Serif:wght@400;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✈️</text></svg>">
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <title>{% block title %}Flight Mapper{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='assets/favicon.svg') }}">
+    <title>{% block title %}FlightStats{% endblock %}</title>
 </head>
 <body>
     <div class="app-container">
         <main>
-            <div class="title-card">
-                <h1>FlightStats</h1>
-            </div>
-        
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            <div class="title-card"><h1>FlightStats</h1></div>
             {% block content %}{% endblock %}
         </main>
-        
         <footer>
-            <md-fab variant="secondary" size="medium" label="Add Flight" aria-label="Add Flight" id="add-flight-fab" data-url="{{ url_for('add_flight') }}">
+            <md-fab variant="secondary" size="small" label="Add Flight" aria-label="Add Flight" id="add-flight-fab" data-url="{{ url_for('add_flight') }}">
                 <span slot="icon" class="material-symbols-outlined">travel</span>
             </md-fab>
-        
             <div class="segmented-nav">
                 <a href="{{ url_for('index') }}" class="nav-segment {% if request.endpoint == 'index' %}active{% endif %}">
-                    <span class="material-symbols-outlined">map</span>
-                    Map
+                    <span class="material-symbols-outlined">map</span> Map
                 </a>
                 <a href="{{ url_for('view_flights') }}" class="nav-segment {% if request.endpoint == 'view_flights' %}active{% endif %}">
-                    <span class="material-symbols-outlined">list_alt</span>
-                    List
+                    <span class="material-symbols-outlined">list_alt</span> List
                 </a>
             </div>
-        
         </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
+    <script src="{{ url_for('static', filename='js/database.js') }}"></script>
+
     <script type="module" src="https://esm.run/@material/web/all.js"></script>
-    
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
-    
     {% block scripts %}{% endblock %}
 </body>
 </html>

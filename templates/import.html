@@ -5,14 +5,10 @@
 <div class="form-card">
     <h1>Import Flights from CSV 📤</h1>
     <p>Upload a CSV file with columns: <code>origin</code>, <code>destination</code>, and <code>date</code>.</p>
-    
-    <form method="post" enctype="multipart/form-data" class="add-form" id="import-form">
+    <form class="add-form" id="import-form">
         <input type="file" name="file" id="file-input" accept=".csv" required hidden>
-        <md-outlined-button type="button" id="select-file-btn">
-            Choose File
-        </md-outlined-button>
+        <md-outlined-button type="button" id="select-file-btn">Choose File</md-outlined-button>
         <span id="file-name-display">No file chosen</span>
-    
         <div class="form-actions">
             <md-filled-button type="submit" id="submit-btn">Upload and Import</md-filled-button>
             <md-circular-progress indeterminate id="import-loader" style="display: none;"></md-circular-progress>
@@ -22,38 +18,57 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 <script>
     const fileInput = document.getElementById('file-input');
     const selectFileBtn = document.getElementById('select-file-btn');
     const fileNameDisplay = document.getElementById('file-name-display');
-    
-    // New elements for submission state
     const importForm = document.getElementById('import-form');
     const submitBtn = document.getElementById('submit-btn');
     const loader = document.getElementById('import-loader');
 
-    // When the visible button is clicked, trigger the hidden file input
-    selectFileBtn.addEventListener('click', () => {
-        fileInput.click();
-    });
-
-    // When a file is chosen, update the text display
+    selectFileBtn.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            fileNameDisplay.textContent = fileInput.files[0].name;
-        } else {
-            fileNameDisplay.textContent = 'No file chosen';
-        }
+        fileNameDisplay.textContent = fileInput.files.length > 0 ? fileInput.files[0].name : 'No file chosen';
     });
 
-    // When the form is submitted, show the loading state
-    importForm.addEventListener('submit', () => {
-        // Disable the button to prevent double-clicks
+    importForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const file = fileInput.files[0];
+        if (!file) {
+            alert('Please select a file to import.');
+            return;
+        }
+
+        // Show loading state
         submitBtn.disabled = true;
-        // Show the spinner
         loader.style.display = 'flex';
-        // Optional: Change the button text
         submitBtn.textContent = 'Importing...';
+
+        // Use Papa Parse to read the file
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                const flightsToImport = results.data.map(row => ({
+                    origin: row.origin ? row.origin.toUpperCase() : '',
+                    destination: row.destination ? row.destination.toUpperCase() : '',
+                    date: row.date
+                }));
+                
+                await importFlights(flightsToImport);
+                alert(`${flightsToImport.length} flights imported successfully!`);
+                window.location.href = "{{ url_for('view_flights') }}";
+            },
+            error: (error) => {
+                console.error("CSV parsing error:", error);
+                alert("An error occurred while parsing the CSV file.");
+                // Reset button state
+                submitBtn.disabled = false;
+                loader.style.display = 'none';
+                submitBtn.textContent = 'Upload and Import';
+            }
+        });
     });
 </script>
 {% endblock %}

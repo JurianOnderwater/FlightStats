@@ -16,66 +16,44 @@
                     <th>Date</th>
                     <th>Origin</th>
                     <th>Destination</th>
-                    <th>Distance (km)</th>
                     <th></th>
                 </tr>
             </thead>
-            <tbody>
-                {% for flight in flights %}
-                <tr>
-                    <td>{{ flight.date }}</td>
-                    <td>{{ flight.origin_flag }} {{ flight.origin }}</td>
-                    <td>{{ flight.destination_flag }} {{ flight.destination }}</td>
-                    <td>{{ flight.distance | round | int }}</td>
-                    <td class="edit-cell">
-                        <a href="{{ url_for('edit_flight', flight_id=flight.id) }}">
-                            <md-icon-button class="edit-btn">
-                                <span class="material-symbols-outlined">edit</span>
-                            </md-icon-button>
-                        </a>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5">No flights have been added yet.</td>
-                </tr>
-                {% endfor %}
+            <tbody id="flights-table-body">
+                <tr><td colspan="4">Loading flights...</td></tr>
             </tbody>
         </table>
     </div>
-
-    <div class="pagination">
-        {% if pagination.has_prev %}
-            <a href="{{ url_for('view_flights', page=pagination.prev_num) }}">
-                <md-outlined-button>&laquo; Previous</md-outlined-button>
-            </a>
-        {% else %}
-            <md-outlined-button disabled>&laquo; Previous</md-outlined-button>
-        {% endif %}
-
-        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-            {% if page_num %}
-                {% if pagination.page == page_num %}
-                    <a href="{{ url_for('view_flights', page=page_num) }}">
-                        <md-filled-button>{{ page_num }}</md-filled-button>
-                    </a>
-                {% else %}
-                     <a href="{{ url_for('view_flights', page=page_num) }}">
-                        <md-outlined-button>{{ page_num }}</md-outlined-button>
-                    </a>
-                {% endif %}
-            {% else %}
-                <md-outlined-button disabled>...</md-outlined-button>
-            {% endif %}
-        {% endfor %}
-
-        {% if pagination.has_next %}
-            <a href="{{ url_for('view_flights', page=pagination.next_num) }}">
-                <md-outlined-button>Next &raquo;</md-outlined-button>
-            </a>
-        {% else %}
-            <md-outlined-button disabled>Next &raquo;</md-outlined-button>
-        {% endif %}
-    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const flights = await getAllFlights();
+        const tbody = document.getElementById('flights-table-body');
+        tbody.innerHTML = ''; // Clear the "Loading..." message
+
+        if (flights.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No flights have been added yet.</td></tr>';
+            return;
+        }
+
+        flights.forEach(flight => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
+                <td>${flight.date}</td>
+                <td>${flight.origin}</td>
+                <td>${flight.destination}</td>
+                <td class="edit-cell">
+                    <a href="/edit/${flight.id}">
+                        <md-icon-button class="edit-btn">
+                            <span class="material-symbols-outlined">edit</span>
+                        </md-icon-button>
+                    </a>
+                </td>
+            `;
+        });
+    });
+</script>
 {% endblock %}
