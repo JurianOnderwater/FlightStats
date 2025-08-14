@@ -4,6 +4,14 @@
 {% block content %}
     <div class="map-container">
         <div id="map"></div>
+        <div id="cesium-container" style="display: none;"></div>
+
+        <div class="view-switcher">
+            <span class="material-symbols-outlined">map</span>
+            <md-switch selected id="view-switch"></md-switch>
+            <span class="material-symbols-outlined">public</span>
+        </div>
+
         <div id="loader-container" class="loader-container">
             <md-circular-progress fourcolor indeterminate></md-circular-progress>
         </div>
@@ -59,9 +67,10 @@
 {% block scripts %}
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-arc/1.0.5/leaflet-arc.min.js"></script>
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.117/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-    
+
     <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
     <script src="{{ url_for('static', filename='js/map.js') }}"></script>
 {% endblock %}

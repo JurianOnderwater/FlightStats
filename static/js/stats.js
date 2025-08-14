@@ -33,7 +33,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
         const origin = airportData.get(flight.origin);
         const dest = airportData.get(flight.destination);
 
-        if (origin && dest) {
+        if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
             totalKm += haversine(origin.lat, origin.lng, dest.lat, dest.lng);
             const year = new Date(flight.date).getFullYear();
             uniqueYears.add(year);
