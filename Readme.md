@@ -1,6 +1,6 @@
 # FlightStats ✈️
 
-A modern, local-first Progressive Web App (PWA) to visualise, track, and analyse your personal flight history. Built with a Python Flask backend (for serving) and a dynamic JavaScript frontend, this application turns your travel data into an interactive and insightful dashboard, all while keeping your data private on your own device.
+A modern, local-first Progressive Web App (PWA) to visualise, track, and analyse your personal flight history. Built with a Python Flask backend (for serving) and a dynamic JavaScript frontend, this website turns your travel data into an interactive and insightful dashboard.
 
 
 
@@ -8,32 +8,14 @@ A modern, local-first Progressive Web App (PWA) to visualise, track, and analyse
 
 ## ## Key Features ✨
 
-* **Interactive Map Visualisation:** View all your flights as curved, great-circle arcs on an interactive map. Each airport is marked with a dot and its IATA code label.
-* **Local-First Data Storage:** Your flight data is stored securely and privately in your browser using **IndexedDB**. Nothing is uploaded to a central server, making the app fast and offline-capable.
-* **Comprehensive Statistics Dashboard:**
+* **Interactive Map Visualisation:** View all your flights on an interactive map. Each airport is marked with its IATA code.
+* **Local-First Data Storage:** Your flight data is stored only in your browser using **IndexedDB**. Nothing is uploaded to a central server.
+* **Data Portability:** **Import** and **export** your entire flight history as csv files.
+* **Statistics Dashboard:**
     * **Hero Stats:** At-a-glance view of your total flights, countries, airports, and unique routes.
-    * **Distance Analytics:** See your total distance flown in km and miles, how many times you've circumnavigated the Earth, and what percentage of the journey to the moon you've completed.
-    * **Time Analytics:** An estimation of your total hours, days, weeks, and months spent in the air.
+    * **Distance Stats:** See your total distance flown in km and miles, how many times you've circumnavigated the Earth, and what percentage of the journey to the moon you've completed.
+    * **Time Stats:** An estimation of your total hours, days, weeks, and months spent in the air.
     * **Top 10 Lists:** Automatically generated leaderboards for your most visited airports and most flown routes.
-* **Full CRUD Functionality:** Easily **add**, **view**, **edit**, and **delete** flights from your travel history.
-* **Data Portability:** **Import** and **export** your entire flight history with the click of a button using the universal CSV format.
-* **Progressive Web App (PWA):** Installable on any device (desktop or mobile) for a native app-like experience, complete with offline access.
-* **Modern UI/UX:** A clean, responsive interface built with Google's **Material 3** design principles, including a custom green theme.
-
----
-
-## ## Tech Stack 🛠️
-
-This project uses a modern web stack, focusing on a lightweight backend and a powerful, client-side frontend.
-
-* **Backend:** **Python** with **Flask** (used for serving the application shell).
-* **Frontend:**
-    * **HTML5** & **CSS3**
-    * **JavaScript (ES6+)**
-    * **Leaflet.js** for the interactive 2D map.
-    * **Material Web Components** for the UI.
-    * **Papa Parse** for robust in-browser CSV parsing.
-* **Client-Side Database:** **IndexedDB** with the `idb` library.
 
 ---
 
@@ -78,3 +60,7 @@ To get a local copy up and running, follow these simple steps.
     Your application will be available at `http://127.0.0.1:5000`.
 
 ---
+
+## ## Non-local usage
+* Website is available [here](https://flightstats-app.onrender.com/)
+* Or not, used the free plan at render so it might be expired
