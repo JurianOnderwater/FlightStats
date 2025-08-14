@@ -27,15 +27,17 @@ function getGreatCirclePoints(start, end) {
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- IMPORTANT: Paste your Cesium Ion Access Token here ---
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIyOGMwNTA3OS1jMWI2LTRlMmUtYWNhNy1iMDBmZWRlYTA4ZWQiLCJpZCI6MzMyMDU1LCJpYXQiOjE3NTUxODM1MTd9.GaaEimukHVcwZ1WEkqo71CT6Heb3M4hFIkKaU8WMb7E';
+    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzYWI3N2RjOS02NDg4LTQwNjYtYTYyZC0xOTU3ODhiZWJhOGIiLCJpZCI6MzMyMDU1LCJpYXQiOjE3NTUxODc2NzN9.r46ue6tmGqQlyPbK-P9205birsMx9QpRVnaoMqLOuMU';
 
     // --- 1. Initialise Viewers ---
     const map = L.map('map').setView([20, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
 
     const viewer = new Cesium.Viewer('cesium-container', {
-        animation: false, timeline: false, geocoder: false, homeButton: false, sceneModePicker: false, 
-        baseLayerPicker: false, navigationHelpButton: false, infoBox: false, selectionIndicator: false, fullscreenButton: false,
+        // imageryProvider: new Cesium.UrlTemplateImageryProvider('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'),
+        animation: false, timeline: false, geocoder: false, homeButton: false, 
+        sceneModePicker: false, baseLayerPicker: false, navigationHelpButton: false, 
+        infoBox: false, selectionIndicator: false, fullscreenButton: false,
     });
     viewer.cesiumWidget.creditContainer.style.display = "none";
 
@@ -80,21 +82,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const allFlights = await getAllFlights();
                     const uniqueYears = calculateAndDisplayStats(allFlights, airportData);
+                    const aggregatedRoutes = new Map();
 
                     // --- 4. Draw on Both Viewers & Store Layers ---
                     allFlights.forEach(flight => {
                         const origin = airportData.get(flight.origin);
                         const dest = airportData.get(flight.destination);
+                        const canonicalRoute = [flight.origin, flight.destination].sort().join('-');
+                        if (!aggregatedRoutes.has(canonicalRoute)) {
+                            aggregatedRoutes.set(canonicalRoute, { count: 0, maxDate: '1900-01-01' });
+                        }
+                        const routeData = aggregatedRoutes.get(canonicalRoute);
+                        routeData.count += 1;
+                        if (flight.date > routeData.maxDate) {
+                            routeData.maxDate = flight.date;
+                        }
 
                         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
                             const year = new Date(flight.date).getFullYear();
                             const lineColour = '#4f6353';
+                            const lineWeight = routeData.count
                             
                             const startPointL = L.latLng(origin.lat, origin.lng);
                             const endPointL = L.latLng(dest.lat, dest.lng);
                             const curvePoints = getGreatCirclePoints(startPointL, endPointL);
-                            const leafletLine = L.polyline(curvePoints, { color: lineColour, weight: 2, opacity: 0.7 });
-                            const markerOptions = { radius: 3, fillColor: lineColour, color: "#4f6353", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
+                            const leafletLine = L.polyline(curvePoints, { color: lineColour, weight: lineWeight, opacity: 0.7 });
+                            const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
                             const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
                             
                             // *** THIS IS THE FIX ***
@@ -103,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const endDot = L.circleMarker(endPointL, markerOptions).bindTooltip(flight.destination, tooltipOptions).openTooltip();
                             const leafletLayer = L.featureGroup([leafletLine, startDot, endDot]);
 
-                            const cesiumLine = viewer.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArray([origin.lng, origin.lat, dest.lng, dest.lat]), width: 2, material: Cesium.Color.BLACK.withAlpha(0.7), arcType: Cesium.ArcType.GEODESIC } });
+                            const cesiumLine = viewer.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArray([origin.lng, origin.lat, dest.lng, dest.lat]), width: lineWeight, material: Cesium.Color.fromCssColorString('#4f6353').withAlpha(0.8), arcType: Cesium.ArcType.GEODESIC } });
 
                             if (!layersByYear[year]) layersByYear[year] = [];
                             layersByYear[year].push({ leaflet: leafletLayer, cesium: cesiumLine });
