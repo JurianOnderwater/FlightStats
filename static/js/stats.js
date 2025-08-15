@@ -69,6 +69,8 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const routeFrequency = new Map();
     const uniqueYears = new Set();
     const monthCounts = Array(12).fill(0); // Array for month counts (0=Jan, 1=Feb, etc.)
+    const weekdayCounts = Array(7).fill(0); // Array for weekday counts (0=Sun, 1=Mon, etc.)
+    
     
     const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -84,9 +86,12 @@ function calculateAndDisplayStats(allFlights, airportData) {
         const flightDate = new Date(flight.date);
         const year = flightDate.getFullYear();
         const month = flightDate.getMonth(); // Get month (0-11)
+        const weekday = flightDate.getDay(); // Get day of week (0=Sun, 1=Mon, etc.)
+        
         
         uniqueYears.add(year);
         monthCounts[month]++; // Increment count for the month
+        weekdayCounts[weekday]++;
 
         const origin = airportData.get(flight.origin);
         const dest = airportData.get(flight.destination);
@@ -223,6 +228,40 @@ function calculateAndDisplayStats(allFlights, airportData) {
             }
         });
     }
+    // --- 6. Create the Weekday Chart (NEW) ---
+    const weekdayCanvas = document.getElementById('weekday-chart');
+    if (weekdayCanvas) {
+        const themeStyles = getComputedStyle(document.documentElement);
+        // Reorder array to start the week on Monday
+        const chartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        const chartCounts = [...weekdayCounts.slice(1), weekdayCounts[0]];
+
+        new Chart(weekdayCanvas, {
+            type: 'bar',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: 'Flights per Weekday',
+                    data: chartCounts,
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-secondary-container').trim(),
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-secondary').trim(),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
 
     createCountryMap(uniqueCountries);
     return [...uniqueYears].sort((a, b) => b - a);
