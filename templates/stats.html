@@ -54,11 +54,16 @@
                 <canvas id="weekday-chart"></canvas>
             </div>
         </div>
+        <div class="stats-card full-width-card-right">
+            <h2>Travel Distribution ☀️</h2>
+            <div id="sunburst-chart" style="width: 100%; height: 600px;"></div>
+        </div>
 
     </div>
 {% endblock %}
 
 {% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -83,9 +88,11 @@
                         const airportData = new Map();
                         results.data.forEach(row => {
                             if (row.iata_code) {
-                                // *** THIS IS THE FIX for the country colouring ***
-                                // Ensure the country code is being stored
+                                // *** THIS IS THE FIX ***
+                                // Create the complete airport data object, including city and name
                                 airportData.set(row.iata_code, { 
+                                    name: row.name,
+                                    city: row.municipality,
                                     country: row.iso_country,
                                     lat: parseFloat(row.latitude_deg),
                                     lng: parseFloat(row.longitude_deg)
@@ -93,6 +100,7 @@
                             }
                         });
                         
+                        // This function will now receive the complete data it needs
                         calculateAndDisplayStats(allFlights, airportData);
                     }
                 });
