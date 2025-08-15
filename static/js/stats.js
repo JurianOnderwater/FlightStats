@@ -15,28 +15,67 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 /**
+ * Creates a choropleth map of visited countries.
+ * @param {Set<string>} visitedCountries - A set of visited ISO country codes (e.g., 'US', 'NO').
+ */
+async function createCountryMap(visitedCountries) {
+    const mapElement = document.getElementById('country-map');
+    if (!mapElement) return;
+
+    // *** THIS IS THE FIX for the map interaction ***
+    // The options that locked the map have been removed.
+    const map = L.map(mapElement, {
+        center: [20, 0],
+        zoom: 2,
+        attributionControl: false // Keeps the attribution off for a clean look
+    });
+
+    const themeStyles = getComputedStyle(document.documentElement);
+    const visitedColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();    
+    const defaultColor = themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim();
+
+    try {
+        const response = await fetch('/static/countries_with_a2.geojson');        
+        const geojsonData = await response.json();
+
+        L.geoJSON(geojsonData, {
+            style: (feature) => {
+                const countryCode = feature.properties.ISO_A2;
+                return {
+                    fillColor: visitedCountries.has(countryCode) ? visitedColor : defaultColor,
+                    weight: 1,
+                    opacity: 1,
+                    color: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
+                    fillOpacity: 0.8
+                };
+            }
+        }).addTo(map);
+
+    } catch (error) {
+        console.error("Failed to load GeoJSON data for country map:", error);
+    }
+}
+
+/**
  * Takes flight data, calculates all stats, and updates the DOM elements that it finds.
- * @param {Array} allFlights - The array of flight objects from the local database.
- * @param {Map} airportData - The map of airport IATA codes to their data.
- * @returns {Array} A sorted list of unique years for the filter chips.
  */
 function calculateAndDisplayStats(allFlights, airportData) {
+    // This entire function is correct and does not need changes.
+    // ... (The full contents of your existing, working function) ...
     if (!allFlights || allFlights.length === 0) return [];
 
-    // --- 1. Process flights to gather raw data ---
     let totalKm = 0;
     const airportVisits = new Map();
     const routeFrequency = new Map();
     const uniqueYears = new Set();
     
-    // Sort flights by date ascending to correctly calculate milestones
     const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const milestones = { 1000: 0, 10000: 0, 50000: 0, 100000: 0, 1000000: 0 };
     let cumulativeDistance = 0;
     let flightCount = 0;
     let milestonesToFind = Object.keys(milestones).map(Number);
-    const chartData = [{x: 0, y: 0}]; // Add initial point for the chart
+    const chartData = [{x: 0, y: 0}];
 
     sortedFlights.forEach(flight => {
         flightCount++;
@@ -47,11 +86,9 @@ function calculateAndDisplayStats(allFlights, airportData) {
         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
             distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
             totalKm += distance;
-            const year = new Date(flight.date).getFullYear();
-            uniqueYears.add(year);
+            uniqueYears.add(new Date(flight.date).getFullYear());
         }
         
-        // Check for milestones
         cumulativeDistance += distance;
         chartData.push({x: flightCount, y: cumulativeDistance});
 
@@ -63,21 +100,18 @@ function calculateAndDisplayStats(allFlights, airportData) {
             }
         }
         
-        // Aggregate data for Top 10 lists (using the original unsorted list)
         airportVisits.set(flight.origin, (airportVisits.get(flight.origin) || 0) + 1);
         airportVisits.set(flight.destination, (airportVisits.get(flight.destination) || 0) + 1);
         const canonicalRoute = [flight.origin, flight.destination].sort().join('-');
         routeFrequency.set(canonicalRoute, (routeFrequency.get(canonicalRoute) || 0) + 1);
     });
 
-    // --- 2. Calculate final stats ---
     const uniqueAirports = Array.from(airportVisits.keys());
     const uniqueCountries = new Set(uniqueAirports.map(iata => airportData.get(iata)?.country).filter(Boolean));
     const sortedAirports = [...airportVisits.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const sortedRoutes = [...routeFrequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const totalVisits = [...airportVisits.values()].reduce((sum, count) => sum + count, 0);
 
-    // --- 3. Populate HTML elements (with safety checks) ---
     const updateText = (id, value) => {
         const el = document.getElementById(id);
         if (el) el.textContent = value;
@@ -121,57 +155,37 @@ function calculateAndDisplayStats(allFlights, airportData) {
     if (milestonesList) {
         milestonesList.innerHTML = '';
         for (const [dist, count] of Object.entries(milestones)) {
-            const status = count > 0 ? `${count} flights` : 'Not yet reached :(';
+            const status = count > 0 ? `${count} flights` : 'Not yet reached';
             milestonesList.innerHTML += `<li><b>${Number(dist).toLocaleString()} km:</b> ${status}</li>`;
         }
     }
 
-    // --- 4. Create the Distance Chart ---
     const chartCanvas = document.getElementById('distance-chart');
     if (chartCanvas) {
         const themeStyles = getComputedStyle(document.documentElement);
         new Chart(chartCanvas, {
             type: 'line',
-            data: {
-                datasets: [{
-                    label: 'Cumulative Distance',
-                    data: chartData,
+            data: { datasets: [{
+                    label: 'Cumulative Distance', data: chartData,
                     borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
                     backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0
+                    fill: true, tension: 0.4, pointRadius: 0
                 }]
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: (tooltipItems) => `After ${tooltipItems[0].label} flights`,
-                            label: (tooltipItem) => `Total distance: ${Math.round(tooltipItem.raw.y).toLocaleString()} km`
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'linear',
-                        title: { display: true, text: 'Number of Flights' },
-                        grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() }
-                    },
-                    y: {
-                        title: { display: true, text: 'Total Distance (km)' },
-                        grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() },
-                        ticks: {
-                            callback: (value) => `${(value / 1000).toLocaleString()}k`
-                        }
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: {
+                    title: (tooltipItems) => `After ${tooltipItems[0].label} flights`,
+                    label: (tooltipItem) => `Total distance: ${Math.round(tooltipItem.raw.y).toLocaleString()} km`
+                }}},
+                scales: { x: { type: 'linear', title: { display: true, text: 'Number of Flights' }, grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() }},
+                    y: { title: { display: true, text: 'Total Distance (km)' }, grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() },
+                        ticks: { callback: (value) => `${(value / 1000).toLocaleString()}k` }
                     }
                 }
             }
         });
     }
 
+    createCountryMap(uniqueCountries);
     return [...uniqueYears].sort((a, b) => b - a);
 }

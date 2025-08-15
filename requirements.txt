@@ -5,3 +5,4 @@ haversine
 gunicorn
 psycopg2-binary
 requests
+pycountry

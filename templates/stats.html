@@ -8,7 +8,7 @@
 
     <div class="stats-grid">
         <div class="stats-card">
-            <h2>Distance 🌍</h2>
+            <h2>Distance ↔️</h2>
             <p><strong>Total Kilometres:</strong> <span id="total-km">0</span> km</p>
             <p><strong>Total Miles:</strong> <span id="total-miles">0</span> mi</p>
             <p><strong>Earth Circumnavigations:</strong> <span id="earth-circumnavigations">0</span></p>
@@ -22,14 +22,14 @@
             <p><strong>Total Months Flown:</strong> <span id="total-months">0</span></p>
         </div>
         <div class="stats-card">
-            <h2>Top 10 Airports 🏆</h2>
+            <h2>Top 10 Airports 🛬</h2>
             <ol id="top-airports-list" class="stats-list"></ol>
         </div>
         <div class="stats-card">
-            <h2>Top 10 Routes ✈️</h2>
+            <h2>Top 10 Routes 🗺️</h2>
             <ol id="top-routes-list" class="stats-list"></ol>
         </div>
-        <div class="stats-card full-width-card">
+        <div class="stats-card full-width-card-left">
             <h2>Distance Milestones 🏁</h2>
             <div class="milestones-container">
                 <ul id="milestones-list" class="stats-list"></ul>
@@ -38,11 +38,17 @@
                 </div>
             </div>
         </div>
+        <div class="stats-card full-width-card-right">
+            <h2>Visited Countries 🌍</h2>
+            <div id="country-map"></div>
+        </div>
 
     </div>
 {% endblock %}
 
 {% block scripts %}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
@@ -65,6 +71,8 @@
                         const airportData = new Map();
                         results.data.forEach(row => {
                             if (row.iata_code) {
+                                // *** THIS IS THE FIX for the country colouring ***
+                                // Ensure the country code is being stored
                                 airportData.set(row.iata_code, { 
                                     country: row.iso_country,
                                     lat: parseFloat(row.latitude_deg),
