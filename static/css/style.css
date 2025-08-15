@@ -257,7 +257,7 @@ md-top-app-bar {
 }
 .chart-container {
     flex: 2; /* Make the chart take up more space */
-    min-width: 300px;
+    min-width: 250px;
     border-radius: 8px; /* Rounded corners for the chart area */
     padding: 16px;
     background-color: var(--md-sys-color-surface-container-high);
