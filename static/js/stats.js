@@ -1,8 +1,5 @@
 // static/js/stats.js
 
-/**
- * Calculates distance between two lat/lng points in km using the Haversine formula.
- */
 function haversine(lat1, lon1, lat2, lon2) {
     const R = 6371; // Radius of Earth in km
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -12,6 +9,59 @@ function haversine(lat1, lon1, lat2, lon2) {
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+}
+const countryToContinent = {
+    "AF": "Asia", "AX": "Europe", "AL": "Europe", "DZ": "Africa", "AS": "Oceania", "AD": "Europe", "AO": "Africa", "AI": "North America", "AQ": "Antarctica", "AG": "North America", "AR": "South America", "AM": "Asia", "AW": "North America", "AU": "Oceania", "AT": "Europe", "AZ": "Asia", "BS": "North America", "BH": "Asia", "BD": "Asia", "BB": "North America", "BY": "Europe", "BE": "Europe", "BZ": "North America", "BJ": "Africa", "BM": "North America", "BT": "Asia", "BO": "South America", "BQ": "North America", "BA": "Europe", "BW": "Africa", "BR": "South America", "IO": "Asia", "VG": "North America", "BN": "Asia", "BG": "Europe", "BF": "Africa", "BI": "Africa", "KH": "Asia", "CM": "Africa", "CA": "North America", "CV": "Africa", "KY": "North America", "CF": "Africa", "TD": "Africa", "CL": "South America", "CN": "Asia", "CX": "Asia", "CC": "Asia", "CO": "South America", "KM": "Africa", "CK": "Oceania", "CR": "North America", "HR": "Europe", "CU": "North America", "CW": "North America", "CY": "Asia", "CZ": "Europe", "CD": "Africa", "DK": "Europe", "DJ": "Africa", "DM": "North America", "DO": "North America", "EC": "South America", "EG": "Africa", "SV": "North America", "GQ": "Africa", "ER": "Africa", "EE": "Europe", "ET": "Africa", "FK": "South America", "FO": "Europe", "FJ": "Oceania", "FI": "Europe", "FR": "Europe", "GF": "South America", "PF": "Oceania", "GA": "Africa", "GM": "Africa", "GE": "Asia", "DE": "Europe", "GH": "Africa", "GI": "Europe", "GR": "Europe", "GL": "North America", "GD": "North America", "GP": "North America", "GU": "Oceania", "GT": "North America", "GG": "Europe", "GN": "Africa", "GW": "Africa", "GY": "South America", "HT": "North America", "HN": "North America", "HK": "Asia", "HU": "Europe", "IS": "Europe", "IN": "Asia", "ID": "Asia", "IR": "Asia", "IQ": "Asia", "IE": "Europe", "IM": "Europe", "IL": "Asia", "IT": "Europe", "CI": "Africa", "JM": "North America", "JP": "Asia", "JE": "Europe", "JO": "Asia", "KZ": "Asia", "KE": "Africa", "KI": "Oceania", "KW": "Asia", "KG": "Asia", "LA": "Asia", "LV": "Europe", "LB": "Asia", "LS": "Africa", "LR": "Africa", "LY": "Africa", "LI": "Europe", "LT": "Europe", "LU": "Europe", "MO": "Asia", "MK": "Europe", "MG": "Africa", "MW": "Africa", "MY": "Asia", "MV": "Asia", "ML": "Africa", "MT": "Europe", "MH": "Oceania", "MQ": "North America", "MR": "Africa", "MU": "Africa", "YT": "Africa", "MX": "North America", "FM": "Oceania", "MD": "Europe", "MC": "Europe", "MN": "Asia", "ME": "Europe", "MS": "North America", "MA": "Africa", "MZ": "Africa", "MM": "Asia", "NA": "Africa", "NR": "Oceania", "NP": "Asia", "NL": "Europe", "NC": "Oceania", "NZ": "Oceania", "NI": "North America", "NE": "Africa", "NG": "Africa", "NU": "Oceania", "NF": "Oceania", "KP": "Asia", "MP": "Oceania", "NO": "Europe", "OM": "Asia", "PK": "Asia", "PW": "Oceania", "PS": "Asia", "PA": "North America", "PG": "Oceania", "PY": "South America", "PE": "South America", "PH": "Asia", "PN": "Oceania", "PL": "Europe", "PT": "Europe", "PR": "North America", "QA": "Asia", "CG": "Africa", "RO": "Europe", "RU": "Europe", "RW": "Africa", "RE": "Africa", "BL": "North America", "SH": "Africa", "KN": "North America", "LC": "North America", "MF": "North America", "PM": "North America", "VC": "North America", "WS": "Oceania", "SM": "Europe", "ST": "Africa", "SA": "Asia", "SN": "Africa", "RS": "Europe", "SC": "Africa", "SL": "Africa", "SG": "Asia", "SX": "North America", "SK": "Europe", "SI": "Europe", "SB": "Oceania", "SO": "Africa", "ZA": "Africa", "GS": "Antarctica", "KR": "Asia", "SS": "Africa", "ES": "Europe", "LK": "Asia", "SD": "Africa", "SR": "South America", "SJ": "Europe", "SZ": "Africa", "SE": "Europe", "CH": "Europe", "SY": "Asia", "TW": "Asia", "TJ": "Asia", "TZ": "Africa", "TH": "Asia", "TL": "Asia", "TG": "Africa", "TK": "Oceania", "TO": "Oceania", "TT": "North America", "TN": "Africa", "TR": "Asia", "TM": "Asia", "TC": "North America", "TV": "Oceania", "UG": "Africa", "UA": "Europe", "AE": "Asia", "GB": "Europe", "US": "North America", "UM": "Oceania", "VI": "North America", "UY": "South America", "UZ": "Asia", "VU": "Oceania", "VA": "Europe", "VE": "South America", "VN": "Asia", "WF": "Oceania", "EH": "Africa", "YE": "Asia", "ZM": "Africa", "ZW": "Africa"
+};
+
+/**
+ * Creates a sunburst chart of travel distribution.
+ */
+function createSunburstChart(allFlights, airportData) {
+    const chartDom = document.getElementById('sunburst-chart');
+    if (!chartDom) return;
+
+    const hierarchy = {};
+    const airportVisits = new Map();
+    allFlights.forEach(flight => {
+        airportVisits.set(flight.origin, (airportVisits.get(flight.origin) || 0) + 1);
+        airportVisits.set(flight.destination, (airportVisits.get(flight.destination) || 0) + 1);
+    });
+
+    for (const [iata, count] of airportVisits.entries()) {
+        const airport = airportData.get(iata);
+        if (!airport || !airport.country || !airport.city) continue;
+        const continent = countryToContinent[airport.country];
+        if (!continent) continue;
+        if (!hierarchy[continent]) hierarchy[continent] = { name: continent, children: {} };
+        if (!hierarchy[continent].children[airport.country]) hierarchy[continent].children[airport.country] = { name: airport.country, children: {} };
+        if (!hierarchy[continent].children[airport.country].children[airport.city]) {
+             hierarchy[continent].children[airport.country].children[airport.city] = { name: airport.city, value: 0 };
+        }
+        hierarchy[continent].children[airport.country].children[airport.city].value += count;
+    }
+
+    const echartsData = Object.values(hierarchy).map(continent => ({
+        name: continent.name,
+        children: Object.values(continent.children).map(country => ({
+            name: country.name,
+            children: Object.values(country.children)
+        }))
+    }));
+
+    const myChart = echarts.init(chartDom);
+    const themeStyles = getComputedStyle(document.documentElement);
+    const option = {
+        series: {
+            type: 'sunburst', data: echartsData, radius: [0, '95%'], sort: undefined,
+            emphasis: { focus: 'ancestor' },
+            levels: [{}, { r0: '15%', r: '40%', itemStyle: { borderWidth: 2, borderColor: themeStyles.getPropertyValue('--md-sys-color-surface').trim() }, label: { rotate: 'tangential' } },
+                { r0: '40%', r: '70%', itemStyle: { borderColor: themeStyles.getPropertyValue('--md-sys-color-surface').trim() }, label: { align: 'right' } },
+                { r0: '70%', r: '72%', label: { position: 'outside', padding: 3, silent: false }, itemStyle: { borderWidth: 3, borderColor: themeStyles.getPropertyValue('--md-sys-color-surface').trim() } }
+            ]
+        }
+    };
+    myChart.setOption(option);
 }
 
 /**
@@ -264,5 +314,6 @@ function calculateAndDisplayStats(allFlights, airportData) {
 
 
     createCountryMap(uniqueCountries);
+    createSunburstChart(allFlights, airportData);
     return [...uniqueYears].sort((a, b) => b - a);
 }
