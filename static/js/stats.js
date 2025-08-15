@@ -68,6 +68,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const airportVisits = new Map();
     const routeFrequency = new Map();
     const uniqueYears = new Set();
+    const monthCounts = Array(12).fill(0); // Array for month counts (0=Jan, 1=Feb, etc.)
     
     const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
 
@@ -79,6 +80,14 @@ function calculateAndDisplayStats(allFlights, airportData) {
 
     sortedFlights.forEach(flight => {
         flightCount++;
+
+        const flightDate = new Date(flight.date);
+        const year = flightDate.getFullYear();
+        const month = flightDate.getMonth(); // Get month (0-11)
+        
+        uniqueYears.add(year);
+        monthCounts[month]++; // Increment count for the month
+
         const origin = airportData.get(flight.origin);
         const dest = airportData.get(flight.destination);
         let distance = 0;
@@ -159,7 +168,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
             milestonesList.innerHTML += `<li><b>${Number(dist).toLocaleString()} km:</b> ${status}</li>`;
         }
     }
-
+    
     const chartCanvas = document.getElementById('distance-chart');
     if (chartCanvas) {
         const themeStyles = getComputedStyle(document.documentElement);
@@ -180,6 +189,35 @@ function calculateAndDisplayStats(allFlights, airportData) {
                 scales: { x: { type: 'linear', title: { display: true, text: 'Number of Flights' }, grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() }},
                     y: { title: { display: true, text: 'Total Distance (km)' }, grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() },
                         ticks: { callback: (value) => `${(value / 1000).toLocaleString()}k` }
+                    }
+                }
+            }
+        });
+    }
+    // --- 5. Create the Seasonality Chart (NEW) ---
+    const seasonalityCanvas = document.getElementById('seasonality-chart');
+    if (seasonalityCanvas) {
+        const themeStyles = getComputedStyle(document.documentElement);
+        new Chart(seasonalityCanvas, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Flights per Month',
+                    data: monthCounts,
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-secondary-container').trim(),
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-secondary').trim(),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
                     }
                 }
             }
