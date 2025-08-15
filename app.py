@@ -17,6 +17,11 @@ def view_flights():
     return render_template("flights.html")
 
 
+@app.route("/stats")
+def stats_page():
+    return render_template("stats.html")
+
+
 @app.route("/add")
 def add_flight():
     return render_template("add_flight.html")
@@ -31,9 +36,6 @@ def edit_flight(flight_id):
 @app.route("/import")
 def import_flights():
     return render_template("import.html")
-
-
-# In app.py, replace the tile_proxy function
 
 
 @app.route("/tile_proxy/<s>/<style>/<int:z>/<int:x>/<int:y>.png")
