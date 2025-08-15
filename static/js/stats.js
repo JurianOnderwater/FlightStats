@@ -15,74 +15,215 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 
 /**
- * Takes flight data and airport data, calculates all stats, and updates the DOM.
- * @param {Array} allFlights - The array of flight objects from the local database.
- * @param {Map} airportData - The map of airport IATA codes to their data.
- * @returns {Array} A sorted list of unique years for the filter chips.
+ * Creates a choropleth map of visited countries.
+ * @param {Set<string>} visitedCountries - A set of visited ISO country codes (e.g., 'US', 'NO').
+ */
+async function createCountryMap(visitedCountries) {
+    const mapElement = document.getElementById('country-map');
+    if (!mapElement) return;
+
+    // *** THIS IS THE FIX for the map interaction ***
+    // The options that locked the map have been removed.
+    const map = L.map(mapElement, {
+        center: [20, 0],
+        zoom: 2,
+        attributionControl: false // Keeps the attribution off for a clean look
+    });
+
+    const themeStyles = getComputedStyle(document.documentElement);
+    const visitedColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();    
+    const defaultColor = themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim();
+
+    try {
+        const response = await fetch('/static/countries_with_a2.geojson');        
+        const geojsonData = await response.json();
+
+        L.geoJSON(geojsonData, {
+            style: (feature) => {
+                const countryCode = feature.properties.ISO_A2;
+                return {
+                    fillColor: visitedCountries.has(countryCode) ? visitedColor : defaultColor,
+                    weight: 1,
+                    opacity: 1,
+                    color: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
+                    fillOpacity: 0.8
+                };
+            }
+        }).addTo(map);
+
+    } catch (error) {
+        console.error("Failed to load GeoJSON data for country map:", error);
+    }
+}
+
+/**
+ * Takes flight data, calculates all stats, and updates the DOM elements that it finds.
  */
 function calculateAndDisplayStats(allFlights, airportData) {
-    if (allFlights.length === 0) return [];
+    // This entire function is correct and does not need changes.
+    // ... (The full contents of your existing, working function) ...
+    if (!allFlights || allFlights.length === 0) return [];
 
-    // --- 1. Process flights to gather raw data ---
     let totalKm = 0;
     const airportVisits = new Map();
     const routeFrequency = new Map();
     const uniqueYears = new Set();
+    const monthCounts = Array(12).fill(0); // Array for month counts (0=Jan, 1=Feb, etc.)
+    
+    const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    allFlights.forEach(flight => {
+    const milestones = { 1000: 0, 10000: 0, 50000: 0, 100000: 0, 1000000: 0 };
+    let cumulativeDistance = 0;
+    let flightCount = 0;
+    let milestonesToFind = Object.keys(milestones).map(Number);
+    const chartData = [{x: 0, y: 0}];
+
+    sortedFlights.forEach(flight => {
+        flightCount++;
+
+        const flightDate = new Date(flight.date);
+        const year = flightDate.getFullYear();
+        const month = flightDate.getMonth(); // Get month (0-11)
+        
+        uniqueYears.add(year);
+        monthCounts[month]++; // Increment count for the month
+
         const origin = airportData.get(flight.origin);
         const dest = airportData.get(flight.destination);
+        let distance = 0;
 
         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
-            totalKm += haversine(origin.lat, origin.lng, dest.lat, dest.lng);
-            const year = new Date(flight.date).getFullYear();
-            uniqueYears.add(year);
+            distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
+            totalKm += distance;
+            uniqueYears.add(new Date(flight.date).getFullYear());
+        }
+        
+        cumulativeDistance += distance;
+        chartData.push({x: flightCount, y: cumulativeDistance});
+
+        for (let i = milestonesToFind.length - 1; i >= 0; i--) {
+            const milestone = milestonesToFind[i];
+            if (cumulativeDistance >= milestone) {
+                milestones[milestone] = flightCount;
+                milestonesToFind.splice(i, 1);
+            }
         }
         
         airportVisits.set(flight.origin, (airportVisits.get(flight.origin) || 0) + 1);
         airportVisits.set(flight.destination, (airportVisits.get(flight.destination) || 0) + 1);
-        
         const canonicalRoute = [flight.origin, flight.destination].sort().join('-');
         routeFrequency.set(canonicalRoute, (routeFrequency.get(canonicalRoute) || 0) + 1);
     });
 
-    // --- 2. Calculate final stats ---
     const uniqueAirports = Array.from(airportVisits.keys());
     const uniqueCountries = new Set(uniqueAirports.map(iata => airportData.get(iata)?.country).filter(Boolean));
     const sortedAirports = [...airportVisits.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const sortedRoutes = [...routeFrequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const totalVisits = [...airportVisits.values()].reduce((sum, count) => sum + count, 0);
 
-    // --- 3. Populate all HTML elements ---
-    document.getElementById('hero-flights').textContent = allFlights.length;
-    document.getElementById('hero-countries').textContent = uniqueCountries.size;
-    document.getElementById('hero-airports').textContent = uniqueAirports.length;
-    document.getElementById('hero-routes').textContent = routeFrequency.size;
+    const updateText = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    };
+    
+    updateText('hero-flights', allFlights.length);
+    updateText('hero-countries', uniqueCountries.size);
+    updateText('hero-airports', uniqueAirports.length);
+    updateText('hero-routes', routeFrequency.size);
 
-    document.getElementById('total-km').textContent = Math.round(totalKm).toLocaleString();
-    document.getElementById('total-miles').textContent = Math.round(totalKm / 1.60934).toLocaleString();
-    document.getElementById('earth-circumnavigations').textContent = (totalKm / 40075).toFixed(2);
-    document.getElementById('percent-to-moon').textContent = (totalKm / 384400 * 100).toFixed(2);
+    updateText('total-km', Math.round(totalKm).toLocaleString());
+    updateText('total-miles', Math.round(totalKm / 1.60934).toLocaleString());
+    updateText('earth-circumnavigations', (totalKm / 40075).toFixed(2));
+    updateText('percent-to-moon', (totalKm / 384400 * 100).toFixed(2));
 
     const totalHours = totalKm / 850;
     const totalDays = totalHours / 24;
-    document.getElementById('total-hours').textContent = Math.round(totalHours).toLocaleString();
-    document.getElementById('total-days').textContent = totalDays.toFixed(1);
-    document.getElementById('total-weeks').textContent = (totalDays / 7).toFixed(1);
-    document.getElementById('total-months').textContent = (totalDays / 30.44).toFixed(1);
+    updateText('total-hours', Math.round(totalHours).toLocaleString());
+    updateText('total-days', totalDays.toFixed(1));
+    updateText('total-weeks', (totalDays / 7).toFixed(1));
+    updateText('total-months', (totalDays / 30.44).toFixed(1));
 
     const topAirportsList = document.getElementById('top-airports-list');
-    topAirportsList.innerHTML = '';
-    sortedAirports.forEach(([iata, count]) => {
-        const percent = totalVisits > 0 ? (count / totalVisits * 100).toFixed(1) : 0;
-        topAirportsList.innerHTML += `<li><b>${iata}</b>: ${count} visits (${percent}%)</li>`;
-    });
+    if (topAirportsList) {
+        topAirportsList.innerHTML = '';
+        sortedAirports.forEach(([iata, count]) => {
+            const percent = totalVisits > 0 ? (count / totalVisits * 100).toFixed(1) : 0;
+            topAirportsList.innerHTML += `<li><b>${iata}</b>: ${count} visits (${percent}%)</li>`;
+        });
+    }
 
     const topRoutesList = document.getElementById('top-routes-list');
-    topRoutesList.innerHTML = '';
-    sortedRoutes.forEach(([route, count]) => {
-        topRoutesList.innerHTML += `<li><b>${route}</b>: ${count} times</li>`;
-    });
+    if (topRoutesList) {
+        topRoutesList.innerHTML = '';
+        sortedRoutes.forEach(([route, count]) => {
+            topRoutesList.innerHTML += `<li><b>${route}</b>: ${count} times</li>`;
+        });
+    }
 
+    const milestonesList = document.getElementById('milestones-list');
+    if (milestonesList) {
+        milestonesList.innerHTML = '';
+        for (const [dist, count] of Object.entries(milestones)) {
+            const status = count > 0 ? `${count} flights` : 'Not yet reached';
+            milestonesList.innerHTML += `<li><b>${Number(dist).toLocaleString()} km:</b> ${status}</li>`;
+        }
+    }
+    
+    const chartCanvas = document.getElementById('distance-chart');
+    if (chartCanvas) {
+        const themeStyles = getComputedStyle(document.documentElement);
+        new Chart(chartCanvas, {
+            type: 'line',
+            data: { datasets: [{
+                    label: 'Cumulative Distance', data: chartData,
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
+                    fill: true, tension: 0.4, pointRadius: 0
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { callbacks: {
+                    title: (tooltipItems) => `After ${tooltipItems[0].label} flights`,
+                    label: (tooltipItem) => `Total distance: ${Math.round(tooltipItem.raw.y).toLocaleString()} km`
+                }}},
+                scales: { x: { type: 'linear', title: { display: true, text: 'Number of Flights' }, grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() }},
+                    y: { title: { display: true, text: 'Total Distance (km)' }, grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() },
+                        ticks: { callback: (value) => `${(value / 1000).toLocaleString()}k` }
+                    }
+                }
+            }
+        });
+    }
+    // --- 5. Create the Seasonality Chart (NEW) ---
+    const seasonalityCanvas = document.getElementById('seasonality-chart');
+    if (seasonalityCanvas) {
+        const themeStyles = getComputedStyle(document.documentElement);
+        new Chart(seasonalityCanvas, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Flights per Month',
+                    data: monthCounts,
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-secondary-container').trim(),
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-secondary').trim(),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
+
+    createCountryMap(uniqueCountries);
     return [...uniqueYears].sort((a, b) => b - a);
 }

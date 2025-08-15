@@ -9,7 +9,9 @@ const URLS_TO_CACHE = [
     '/static/js/app.js',
     '/static/js/map.js',
     '/static/manifest.json',
-    '/static/assets/favicon.svg'
+    '/static/assets/favicon.svg',
+    '/static/airports.csv',
+    '/static/countries_with_a2.geojson' // Use the new file
 ];
 
 // Install event: This will now log each file as it caches it.

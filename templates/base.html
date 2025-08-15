@@ -36,6 +36,9 @@
                 <a href="{{ url_for('view_flights') }}" class="nav-segment {% if request.endpoint == 'view_flights' %}active{% endif %}">
                     <span class="material-symbols-outlined">list_alt</span> List
                 </a>
+                <a href="{{ url_for('stats_page') }}" class="nav-segment {% if request.endpoint == 'stats_page' %}active{% endif %}">
+                    <span class="material-symbols-outlined">query_stats</span> Stats
+                </a>
             </div>
         </footer>
     </div>
