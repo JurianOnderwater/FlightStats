@@ -36,6 +36,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
     let cumulativeDistance = 0;
     let flightCount = 0;
     let milestonesToFind = Object.keys(milestones).map(Number);
+    const chartData = [{x: 0, y: 0}]; // Add initial point for the chart
 
     sortedFlights.forEach(flight => {
         flightCount++;
@@ -52,11 +53,13 @@ function calculateAndDisplayStats(allFlights, airportData) {
         
         // Check for milestones
         cumulativeDistance += distance;
+        chartData.push({x: flightCount, y: cumulativeDistance});
+
         for (let i = milestonesToFind.length - 1; i >= 0; i--) {
             const milestone = milestonesToFind[i];
             if (cumulativeDistance >= milestone) {
                 milestones[milestone] = flightCount;
-                milestonesToFind.splice(i, 1); // Remove found milestone so we don't check it again
+                milestonesToFind.splice(i, 1);
             }
         }
         
@@ -118,9 +121,56 @@ function calculateAndDisplayStats(allFlights, airportData) {
     if (milestonesList) {
         milestonesList.innerHTML = '';
         for (const [dist, count] of Object.entries(milestones)) {
-            const status = count > 0 ? `${count} flights` : 'Not yet reached';
+            const status = count > 0 ? `${count} flights` : 'Not yet reached :(';
             milestonesList.innerHTML += `<li><b>${Number(dist).toLocaleString()} km:</b> ${status}</li>`;
         }
+    }
+
+    // --- 4. Create the Distance Chart ---
+    const chartCanvas = document.getElementById('distance-chart');
+    if (chartCanvas) {
+        const themeStyles = getComputedStyle(document.documentElement);
+        new Chart(chartCanvas, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Cumulative Distance',
+                    data: chartData,
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (tooltipItems) => `After ${tooltipItems[0].label} flights`,
+                            label: (tooltipItem) => `Total distance: ${Math.round(tooltipItem.raw.y).toLocaleString()} km`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Number of Flights' },
+                        grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() }
+                    },
+                    y: {
+                        title: { display: true, text: 'Total Distance (km)' },
+                        grid: { color: themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim() },
+                        ticks: {
+                            callback: (value) => `${(value / 1000).toLocaleString()}k`
+                        }
+                    }
+                }
+            }
+        });
     }
 
     return [...uniqueYears].sort((a, b) => b - a);

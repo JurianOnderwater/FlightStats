@@ -2,23 +2,8 @@
 {% block title %}Statistics{% endblock %}
 
 {% block content %}
-    <div class="hero-stats">
-        <div class="hero-stat-item">
-            <span id="hero-flights" class="hero-stat-number">0</span>
-            <p class="hero-stat-label">Flights</p>
-        </div>
-        <div class="hero-stat-item">
-            <span id="hero-countries" class="hero-stat-number">0</span>
-            <p class="hero-stat-label">Countries</p>
-        </div>
-        <div class="hero-stat-item">
-            <span id="hero-airports" class="hero-stat-number">0</span>
-            <p class="hero-stat-label">Airports</p>
-        </div>
-        <div class="hero-stat-item">
-            <span id="hero-routes" class="hero-stat-number">0</span>
-            <p class="hero-stat-label">Routes</p>
-        </div>
+    <div id="loader-container" class="loader-container">
+        <md-circular-progress indeterminate></md-circular-progress>
     </div>
 
     <div class="stats-grid">
@@ -44,49 +29,58 @@
             <h2>Top 10 Routes ✈️</h2>
             <ol id="top-routes-list" class="stats-list"></ol>
         </div>
-        <div class="stats-card">
+        <div class="stats-card full-width-card">
             <h2>Distance Milestones 🏁</h2>
-            <ul id="milestones-list" class="stats-list">
-                </ul>
+            <div class="milestones-container">
+                <ul id="milestones-list" class="stats-list"></ul>
+                <div class="chart-container">
+                    <canvas id="distance-chart"></canvas>
+                </div>
+            </div>
         </div>
+
     </div>
 {% endblock %}
 
 {% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            // You can add a simple loading indicator here if you like
-            const loadingEl = document.createElement('p');
-            loadingEl.textContent = 'Calculating statistics...';
-            document.querySelector('.hero-stats').before(loadingEl);
+            const loader = document.getElementById('loader-container');
+            if (loader) loader.style.display = 'flex';
 
-            const [allFlights, airportCsvText] = await Promise.all([
-                getAllFlights(),
-                fetch('/static/airports.csv').then(res => res.text())
-            ]);
+            try {
+                const [allFlights, airportCsvText] = await Promise.all([
+                    getAllFlights(),
+                    fetch('/static/airports.csv').then(res => res.text())
+                ]);
 
-            Papa.parse(airportCsvText, {
-                header: true,
-                skipEmptyLines: true,
-                complete: (results) => {
-                    const airportData = new Map();
-                    results.data.forEach(row => {
-                        if (row.iata_code) {
-                            airportData.set(row.iata_code, { 
-                                country: row.iso_country,
-                                lat: parseFloat(row.latitude_deg),
-                                lng: parseFloat(row.longitude_deg)
-                             });
-                        }
-                    });
-                    
-                    calculateAndDisplayStats(allFlights, airportData);
-                    loadingEl.remove();
-                }
-            });
+                Papa.parse(airportCsvText, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        const airportData = new Map();
+                        results.data.forEach(row => {
+                            if (row.iata_code) {
+                                airportData.set(row.iata_code, { 
+                                    country: row.iso_country,
+                                    lat: parseFloat(row.latitude_deg),
+                                    lng: parseFloat(row.longitude_deg)
+                                 });
+                            }
+                        });
+                        
+                        calculateAndDisplayStats(allFlights, airportData);
+                    }
+                });
+            } catch (error) {
+                console.error("Failed to load data for stats page:", error);
+            } finally {
+                if (loader) loader.style.display = 'none';
+            }
         });
     </script>
 {% endblock %}
