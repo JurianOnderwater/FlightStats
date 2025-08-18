@@ -80,6 +80,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 country: row.iso_country,
                                 name: row.name, // Also store the name for the datalist
                                 city: row.municipality // And the city
+                                lat: parseFloat(row.latitude_deg), 
+                                lng: parseFloat(row.longitude_deg), 
+                                country: row.iso_country,
+                                name: row.name, // Also store the name for the datalist
+                                city: row.municipality // And the city
                             });
                         }
                     });
@@ -87,8 +92,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     console.log(`Finished parsing and cached ${airportData.size} airports.`);
                     
+                    localStorage.setItem('airportData', JSON.stringify(Array.from(airportData.entries())));
+
+                    console.log(`Finished parsing and cached ${airportData.size} airports.`);
+                    
 
                     const allFlights = await getAllFlights();
+                    const { uniqueYears } = calculateAndDisplayStats(allFlights, airportData);
                     const { uniqueYears } = calculateAndDisplayStats(allFlights, airportData);
                     const aggregatedRoutes = new Map();
 
