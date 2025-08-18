@@ -124,12 +124,6 @@ async function createCountryMap(visitedCountries) {
  * Takes flight data, calculates all stats, and updates the DOM elements that it finds.
  */
 function calculateAndDisplayStats(allFlights, airportData) {
-    
-    let longestFlight = null;
-    let shortestFlight = null;
-    let maxDist = -1;
-    let minDist = Infinity;
-
     if (!allFlights || allFlights.length === 0) return [];
 
     let totalKm = 0;
@@ -160,6 +154,17 @@ function calculateAndDisplayStats(allFlights, airportData) {
         uniqueYears.add(year);
         monthCounts[month]++; // Increment count for the month
         weekdayCounts[weekday]++;
+
+        // Add distance to each flight object once
+        allFlights.forEach(flight => {
+            const origin = airportData.get(flight.origin);
+            const dest = airportData.get(flight.destination);
+            if (origin && dest && !isNaN(origin.lat)) {
+                flight.distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
+            } else {
+                flight.distance = 0;
+            }
+        });
 
         const origin = airportData.get(flight.origin);
         const dest = airportData.get(flight.destination);
@@ -196,7 +201,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
 
     const updateText = (id, value) => {
         const el = document.getElementById(id);
-        if (el) el.textContent = value;
+        if (el) el.innerHTML = value;
     };
     
     updateText('hero-flights', allFlights.length);
@@ -329,6 +334,20 @@ function calculateAndDisplayStats(allFlights, airportData) {
             }
         });
     }
+    const sortedByDist = [...allFlights].filter(f => f.distance > 0).sort((a, b) => a.distance - b.distance);
+    const shortestFlight = sortedByDist[0];
+    const longestFlight = sortedByDist[sortedByDist.length - 1];
+    
+    // --- NEW: Populate the Flight Records card ---
+    if (shortestFlight) {
+        updateText('shortest-flight-route', `${shortestFlight.origin}<br> ↓ <br>${shortestFlight.destination}`);
+        updateText('shortest-flight-dist', `${Math.round(shortestFlight.distance).toLocaleString()} km`);
+    }
+    if (longestFlight) {
+        updateText('longest-flight-route', `${longestFlight.origin}<br> ↓ <br>${longestFlight.destination}`);
+        updateText('longest-flight-dist', `${Math.round(longestFlight.distance).toLocaleString()} km`);
+    }
+
 
 
     createCountryMap(uniqueCountries);
