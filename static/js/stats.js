@@ -52,6 +52,14 @@ function createSunburstChart(allFlights, airportData) {
     const myChart = echarts.init(chartDom);
     const themeStyles = getComputedStyle(document.documentElement);
     const option = {
+        color: [
+            // themeStyles.getPropertyValue('--md-sys-color-comp-pink').trim(),
+            // themeStyles.getPropertyValue('--md-sys-color-comp-orange').trim(),
+            themeStyles.getPropertyValue('--md-sys-color-error-container').trim(),
+            themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(), 
+              themeStyles.getPropertyValue('--md-sys-color-comp-yellow').trim(),
+            themeStyles.getPropertyValue('--md-sys-color-comp-cyan').trim(),
+        ],
         series: {
             type: 'sunburst', data: echartsData, radius: [0, '95%'], sort: undefined,
             emphasis: { focus: 'ancestor' },
