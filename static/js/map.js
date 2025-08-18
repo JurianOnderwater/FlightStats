@@ -194,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             const longestFlight = sortedByDist[sortedByDist.length - 1];
 
                             const themeStyles = getComputedStyle(document.documentElement);
-                            const redColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-purple').trim();
-                            const blueColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-blue').trim();
+                            const longColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-yellow').trim();
+                            const shortColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-purple').trim();
 
                             // Draw the longest flight
                             if (longestFlight) {
@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const startPoint = L.latLng(origin.lat, origin.lng);
                                 const endPoint = L.latLng(dest.lat, dest.lng);
                                 const curvePoints = getGreatCirclePoints(startPoint, endPoint);
-                                L.polyline(curvePoints, { color: redColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                                L.polyline(curvePoints, { color: longColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
                             }
 
                             // Draw the shortest flight
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const startPoint = L.latLng(origin.lat, origin.lng);
                                 const endPoint = L.latLng(dest.lat, dest.lng);
                                 const curvePoints = getGreatCirclePoints(startPoint, endPoint);
-                                L.polyline(curvePoints, { color: blueColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                                L.polyline(curvePoints, { color: shortColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
                             }
                         }
                     }
