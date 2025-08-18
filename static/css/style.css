@@ -42,12 +42,19 @@
     /* --- Complimentary colours --- */
     --md-sys-color-primary: #006d39;
     --md-sys-color-comp-blue: #a3c9ff; 
+    --md-sys-color-comp-red: #bfe9f7;
     --md-sys-color-comp-pink: #ffdad6;
     --md-sys-color-comp-orange: #ffdbc8;
     --md-sys-color-comp-lila: #eaddff; 
     --md-sys-color-comp-yellow: #fff099;
     --md-sys-color-comp-cyan: #bfe9f7;
-    
+    --md-sys-color-primary-comp-green: #006d39;
+    --md-sys-color-primary-comp-blue: #3b6470;
+    --md-sys-color-primary-comp-yellow: #b58f00;
+    --md-sys-color-primary-comp-amber: #815500;
+    --md-sys-color-primary-comp-slate: #345da7;
+    --md-sys-color-primary-comp-red: #ba1a1a;
+    --md-sys-color-primary-comp-purple: #563f82;
 
     /* --- Material 3 Typography Theme --- */
     /* Set the default font for most text components to Roboto Flex */

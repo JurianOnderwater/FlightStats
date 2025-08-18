@@ -124,8 +124,12 @@ async function createCountryMap(visitedCountries) {
  * Takes flight data, calculates all stats, and updates the DOM elements that it finds.
  */
 function calculateAndDisplayStats(allFlights, airportData) {
-    // This entire function is correct and does not need changes.
-    // ... (The full contents of your existing, working function) ...
+    
+    let longestFlight = null;
+    let shortestFlight = null;
+    let maxDist = -1;
+    let minDist = Infinity;
+
     if (!allFlights || allFlights.length === 0) return [];
 
     let totalKm = 0;
@@ -329,5 +333,6 @@ function calculateAndDisplayStats(allFlights, airportData) {
 
     createCountryMap(uniqueCountries);
     createSunburstChart(allFlights, airportData);
-    return [...uniqueYears].sort((a, b) => b - a);
-}
+    return {
+        uniqueYears: [...uniqueYears].sort((a, b) => b - a),
+    };}
