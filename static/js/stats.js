@@ -64,35 +64,41 @@ function createSunburstChart(allFlights, airportData) {
     myChart.setOption(option);
 }
 
-/**
- * Creates a choropleth map of visited countries.
- * @param {Set<string>} visitedCountries - A set of visited ISO country codes (e.g., 'US', 'NO').
- */
+// In static/js/stats.js, replace the createCountryMap function
+
 async function createCountryMap(visitedCountries) {
     const mapElement = document.getElementById('country-map');
     if (!mapElement) return;
 
-    // *** THIS IS THE FIX for the map interaction ***
-    // The options that locked the map have been removed.
     const map = L.map(mapElement, {
         center: [20, 0],
         zoom: 2,
-        attributionControl: false // Keeps the attribution off for a clean look
+        attributionControl: false
     });
 
     const themeStyles = getComputedStyle(document.documentElement);
-    const visitedColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();    
+    const visitedColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();
     const defaultColor = themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim();
 
     try {
-        const response = await fetch('/static/countries_with_a2.geojson');        
+        const response = await fetch('/static/countries_with_a2.geojson');
         const geojsonData = await response.json();
 
         L.geoJSON(geojsonData, {
             style: (feature) => {
-                const countryCode = feature.properties.ISO_A2;
+                // *** THIS IS THE FIX ***
+                // Get the primary code
+                let countryCode = feature.properties.ISO_A2;
+                
+                // If the primary code is invalid, try the backup code
+                if (countryCode === '-99' || !countryCode) {
+                    countryCode = feature.properties.ISO_A2_EH;
+                }
+                
+                const isVisited = countryCode && visitedCountries.has(countryCode.toUpperCase());
+                
                 return {
-                    fillColor: visitedCountries.has(countryCode) ? visitedColor : defaultColor,
+                    fillColor: isVisited ? visitedColor : defaultColor,
                     weight: 1,
                     opacity: 1,
                     color: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
