@@ -26,48 +26,40 @@ function getGreatCirclePoints(start, end) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- IMPORTANT: Paste your Cesium Ion Access Token here ---
-    Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzYWI3N2RjOS02NDg4LTQwNjYtYTYyZC0xOTU3ODhiZWJhOGIiLCJpZCI6MzMyMDU1LCJpYXQiOjE3NTUxODc2NzN9.r46ue6tmGqQlyPbK-P9205birsMx9QpRVnaoMqLOuMU';
-
     // --- 1. Initialise Viewers ---
     const map = L.map('map').setView([20, 0], 2);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    }).addTo(map);
+    // L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    // }).addTo(map);
 
-    const viewer = new Cesium.Viewer('cesium-container', {
-        // imageryProvider: new Cesium.UrlTemplateImageryProvider({
-        //     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-        //     subdomains: ['a', 'b', 'c', 'd']
-        // }),
-        animation: false, timeline: false, geocoder: false, homeButton: false, 
-        sceneModePicker: false, baseLayerPicker: false, navigationHelpButton: false, 
-        infoBox: false, selectionIndicator: false, fullscreenButton: false,
-    });
-    viewer.cesiumWidget.creditContainer.style.display = "none";
+    // --- 2. Initialise ECharts Globe View ---
+    const globeContainer = document.getElementById('cesium-container'); // Reusing the old container
+    const globeChart = echarts.init(globeContainer);
 
     // --- 2. Setup UI and Data Storage ---
     const layersByYear = {};
     const loader = document.getElementById('loader-container');
+    let allEchartsRoutes = []; // To store flight data for ECharts
     const viewSwitch = document.getElementById('view-switch');
     const leafletContainer = document.getElementById('map');
-    const cesiumContainer = document.getElementById('cesium-container');
+    // const cesiumContainer = document.getElementById('cesium-container');
 
     // *** THIS IS THE FIX: Change 'click' to 'input' ***
     viewSwitch.addEventListener('input', () => {
-        if (!viewSwitch.selected) { // 2D Map view
+        if (!viewSwitch.selected) {
             leafletContainer.style.display = 'block';
-            cesiumContainer.style.display = 'none';
-        } else { // Globe view
+            globeContainer.style.display = 'none';
+        } else {
             leafletContainer.style.display = 'none';
-            cesiumContainer.style.display = 'block';
+            globeContainer.style.display = 'block';
+            globeChart.resize(); // Important: resize chart when it becomes visible
         }
     });
     leafletContainer.style.display = 'block';
-    cesiumContainer.style.display = 'none';
+    globeContainer.style.display = 'none';
     viewSwitch.selected = false;
 
     if (loader) loader.style.display = 'flex';
@@ -100,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { uniqueYears } = calculateAndDisplayStats(allFlights, airportData);
                     const aggregatedRoutes = new Map();
 
-                    // --- 4. Draw on Both Viewers & Store Layers ---
+                    // --- 5. Prepare Data and Draw for Both Views ---
                     allFlights.forEach(flight => {
                         const origin = airportData.get(flight.origin);
                         const dest = airportData.get(flight.destination);
@@ -115,9 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
-                            const year = new Date(flight.date).getFullYear();
                             const lineColour = '#006d39';
                             const lineWeight = routeData.count
+                            const year = new Date(flight.date).getFullYear();
                             
                             const startPointL = L.latLng(origin.lat, origin.lng);
                             const endPointL = L.latLng(dest.lat, dest.lng);
@@ -132,44 +124,71 @@ document.addEventListener('DOMContentLoaded', () => {
                             const endDot = L.circleMarker(endPointL, markerOptions).bindTooltip(flight.destination, tooltipOptions).openTooltip();
                             const leafletLayer = L.featureGroup([leafletLine, startDot, endDot]);
 
-                            const cesiumLine = viewer.entities.add({ polyline: { positions: Cesium.Cartesian3.fromDegreesArray([origin.lng, origin.lat, dest.lng, dest.lat]), width: lineWeight, material: Cesium.Color.fromCssColorString('#4f6353').withAlpha(0.8), arcType: Cesium.ArcType.GEODESIC } });
-
                             if (!layersByYear[year]) layersByYear[year] = [];
-                            layersByYear[year].push({ leaflet: leafletLayer, cesium: cesiumLine });
+                            layersByYear[year].push({ leaflet: leafletLayer });
+
+                            // B. Prepare ECharts route data
+                            const lineWeightDouble = lineWeight * 2;
+                            allEchartsRoutes.push({
+                                year: year,
+                                coords: [[origin.lng, origin.lat], [dest.lng, dest.lat]],
+                                weight: lineWeightDouble
+                            });
                         }
                     });
 
-                    // --- 5. Create Filter Chips ---
+                    // --- 6. Configure and Render ECharts Globe ---
+                    globeChart.setOption({
+                        backgroundColor: '#000',
+                        globe: {
+                            baseTexture: '/static/textures/world.topo.bathy.200401.jpg',
+                            heightTexture: '/static/textures/bathymetry_bw_composite_4k.jpg',
+                            shading: 'lambert',
+                            light: { ambient: { intensity: 0.4 }, main: { intensity: 0.6 } },
+                            viewControl: { autoRotate: false }
+                        },
+                        series: {
+                            type: 'lines3D',
+                            coordinateSystem: 'globe',
+                            blendMode: 'lighter',
+                            lineStyle: { color: '#006d39', opacity: 0.7 },
+                            data: allEchartsRoutes.map(route => ({
+                                coords: route.coords,
+                                lineStyle: {
+                                    width: route.weight,
+                                }
+                            }))
+                        }
+                    });
+                
+                    // --- 7. Create Filter Chips with updated logic ---
                     const chipContainer = document.getElementById('chip-container');
                     chipContainer.innerHTML = '';
+                    const selectedYears = new Set(uniqueYears);
+
                     uniqueYears.forEach(year => {
                         const chip = document.createElement('md-filter-chip');
                         chip.label = String(year);
                         chip.selected = true;
                         chip.addEventListener('click', () => {
-                            const layers = layersByYear[year] || [];
-                            layers.forEach(layer => {
-                                // *** THIS IS THE FIX ***
-                                // Simply add or remove the layer. Do not call openTooltip here.
-                                if (chip.selected) { map.addLayer(layer.leaflet); } 
-                                else { map.removeLayer(layer.leaflet); }
-                                layer.cesium.show = chip.selected;
-                            });
+                            if (chip.selected) selectedYears.add(year);
+                            else selectedYears.delete(year);
+
+                            // Filter Leaflet
+                            const leafletLayers = layersByYear[year] || [];
+                            leafletLayers.forEach(l => chip.selected ? map.addLayer(l.leaflet) : map.removeLayer(l.leaflet));
+
+                            // Filter ECharts
+                            const filteredRoutes = allEchartsRoutes.filter(r => selectedYears.has(r.year));
+                            globeChart.setOption({ series: { data: filteredRoutes.map(r => r.coords) } });
                         });
                         chipContainer.appendChild(chip);
                     });
 
-                    // --- 6. Initially Add All Layers ---
+                    // Initially add all Leaflet layers
                     for (const year in layersByYear) {
-                        layersByYear[year].forEach(layer => {
-                            // *** THIS IS THE FIX ***
-                            // Simply add the layer. The tooltips are already open.
-                            map.addLayer(layer.leaflet);
-                            layer.cesium.show = true;
-                        });
+                        layersByYear[year].forEach(l => map.addLayer(l.leaflet));
                     }
-
-                    // In static/js/map.js, replace the "Find and Draw..." section
 
                     // --- 7. Find and Draw Longest/Shortest Flights ---
                     if (allFlights.length >= 2) {
