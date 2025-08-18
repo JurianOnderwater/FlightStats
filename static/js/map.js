@@ -39,10 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }).addTo(map);
 
     const viewer = new Cesium.Viewer('cesium-container', {
-        imageryProvider: new Cesium.UrlTemplateImageryProvider({
-            url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
-            subdomains: ['a', 'b', 'c', 'd']
-        }),
+        // imageryProvider: new Cesium.UrlTemplateImageryProvider({
+        //     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',
+        //     subdomains: ['a', 'b', 'c', 'd']
+        // }),
         animation: false, timeline: false, geocoder: false, homeButton: false, 
         sceneModePicker: false, baseLayerPicker: false, navigationHelpButton: false, 
         infoBox: false, selectionIndicator: false, fullscreenButton: false,
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
 
                     const allFlights = await getAllFlights();
-                    const uniqueYears = calculateAndDisplayStats(allFlights, airportData);
+                    const { uniqueYears } = calculateAndDisplayStats(allFlights, airportData);
                     const aggregatedRoutes = new Map();
 
                     // --- 4. Draw on Both Viewers & Store Layers ---
@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
                             const year = new Date(flight.date).getFullYear();
-                            const lineColour = '#4f6353';
+                            const lineColour = '#006d39';
                             const lineWeight = routeData.count
                             
                             const startPointL = L.latLng(origin.lat, origin.lng);
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 else { map.removeLayer(layer.leaflet); }
                                 layer.cesium.show = chip.selected;
                             });
-});
+                        });
                         chipContainer.appendChild(chip);
                     });
 
@@ -167,6 +167,56 @@ document.addEventListener('DOMContentLoaded', () => {
                             map.addLayer(layer.leaflet);
                             layer.cesium.show = true;
                         });
+                    }
+
+                    // In static/js/map.js, replace the "Find and Draw..." section
+
+                    // --- 7. Find and Draw Longest/Shortest Flights ---
+                    if (allFlights.length >= 2) {
+                        // First, ensure every flight has a calculated distance
+                        allFlights.forEach(flight => {
+                            if (typeof flight.distance === 'undefined') {
+                                const origin = airportData.get(flight.origin);
+                                const dest = airportData.get(flight.destination);
+                                if (origin && dest && !isNaN(origin.lat)) {
+                                    flight.distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
+                                } else {
+                                    flight.distance = 0;
+                                }
+                            }
+                        });
+
+                        const sortedByDist = [...allFlights].filter(f => f.distance > 0).sort((a, b) => a.distance - b.distance);
+                        
+
+                        if (sortedByDist.length > 0) {
+                            const shortestFlight = sortedByDist[0];
+                            const longestFlight = sortedByDist[sortedByDist.length - 1];
+
+                            const themeStyles = getComputedStyle(document.documentElement);
+                            const redColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-purple').trim();
+                            const blueColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-blue').trim();
+
+                            // Draw the longest flight
+                            if (longestFlight) {
+                                const origin = airportData.get(longestFlight.origin);
+                                const dest = airportData.get(longestFlight.destination);
+                                const startPoint = L.latLng(origin.lat, origin.lng);
+                                const endPoint = L.latLng(dest.lat, dest.lng);
+                                const curvePoints = getGreatCirclePoints(startPoint, endPoint);
+                                L.polyline(curvePoints, { color: redColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                            }
+
+                            // Draw the shortest flight
+                            if (shortestFlight && shortestFlight.id !== longestFlight.id) {
+                                const origin = airportData.get(shortestFlight.origin);
+                                const dest = airportData.get(shortestFlight.destination);
+                                const startPoint = L.latLng(origin.lat, origin.lng);
+                                const endPoint = L.latLng(dest.lat, dest.lng);
+                                const curvePoints = getGreatCirclePoints(startPoint, endPoint);
+                                L.polyline(curvePoints, { color: blueColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                            }
+                        }
                     }
                     
                     if (loader) loader.style.display = 'none';
