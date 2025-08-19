@@ -138,18 +138,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // --- 6. Configure and Render ECharts Globe ---
                     globeChart.setOption({
-                        backgroundColor: '#000',
+                        backgroundColor: '#000011',
                         globe: {
                             baseTexture: '/static/textures/world.topo.bathy.200401.desat2.jpg',
                             heightTexture: '/static/textures/bathymetry_bw_composite_4k.jpg',
+                            // displacementScale: 0.04,
+                            // displacementQuality: 'ultra',
                             shading: 'lambert',
-                            light: { ambient: { intensity: 0.4 }, main: { intensity: 0.6 } },
+                            light: { ambient: { intensity: 0.5 }, main: { intensity: 0.6 } },
+                            // postEffect: { enable: true, bloom: { threshold: 0.5, strength: 0.5, radius: 0.5 } },
                             viewControl: { autoRotate: true, autoRotateSpeed: 1.1 }
                         },
                         series: {
                             type: 'lines3D',
                             coordinateSystem: 'globe',
                             blendMode: 'lighter',
+                            effect: { show: true, constantSpeed: 5 },
                             lineStyle: { color: '#006d39', opacity: 0.7 },
                             data: allEchartsRoutes.map(route => ({
                                 coords: route.coords,
