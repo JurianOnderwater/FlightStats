@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const leafletContainer = document.getElementById('map');
     // const cesiumContainer = document.getElementById('cesium-container');
 
-    // *** THIS IS THE FIX: Change 'click' to 'input' ***
     viewSwitch.addEventListener('input', () => {
         if (!viewSwitch.selected) {
             leafletContainer.style.display = 'block';
@@ -141,11 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     globeChart.setOption({
                         backgroundColor: '#000',
                         globe: {
-                            baseTexture: '/static/textures/world.topo.bathy.200401.jpg',
+                            baseTexture: '/static/textures/world.topo.bathy.200401.desat2.jpg',
                             heightTexture: '/static/textures/bathymetry_bw_composite_4k.jpg',
                             shading: 'lambert',
                             light: { ambient: { intensity: 0.4 }, main: { intensity: 0.6 } },
-                            viewControl: { autoRotate: false }
+                            viewControl: { autoRotate: true, autoRotateSpeed: 1.1 }
                         },
                         series: {
                             type: 'lines3D',
