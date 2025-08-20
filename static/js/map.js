@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const startPoint = L.latLng(origin.lat, origin.lng);
                                 const endPoint = L.latLng(dest.lat, dest.lng);
                                 const curvePoints = getGreatCirclePoints(startPoint, endPoint);
-                                L.polyline(curvePoints, { color: shortColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                                L.polyline(curvePoints, { color: longColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
                             }
                         }
                     }
