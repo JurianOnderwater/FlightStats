@@ -130,8 +130,9 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const airportVisits = new Map();
     const routeFrequency = new Map();
     const uniqueYears = new Set();
-    const monthCounts = Array(12).fill(0); // Array for month counts (0=Jan, 1=Feb, etc.)
-    const weekdayCounts = Array(7).fill(0); // Array for weekday counts (0=Sun, 1=Mon, etc.)
+    const monthCounts = Array(12).fill(0);
+    const weekdayCounts = Array(7).fill(0);
+    const yearlyCounts = new Map(); // Map to store flight counts per year
     
     
     const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -148,12 +149,13 @@ function calculateAndDisplayStats(allFlights, airportData) {
         const flightDate = new Date(flight.date);
         const year = flightDate.getFullYear();
         const month = flightDate.getMonth(); // Get month (0-11)
-        const weekday = flightDate.getDay(); // Get day of week (0=Sun, 1=Mon, etc.)
+        const weekday = flightDate.getDay(); // Get day of week (0=Sun, 1=Mon, etc.)        
         
         
         uniqueYears.add(year);
         monthCounts[month]++; // Increment count for the month
         weekdayCounts[weekday]++;
+        yearlyCounts.set(year, (yearlyCounts.get(year) || 0) + 1);
 
         // Add distance to each flight object once
         allFlights.forEach(flight => {
@@ -273,6 +275,37 @@ function calculateAndDisplayStats(allFlights, airportData) {
         });
     }
     // --- 5. Create the Seasonality Chart (NEW) ---
+    const yearlyCanvas = document.getElementById('yearly-chart');
+    if (yearlyCanvas) {
+        const themeStyles = getComputedStyle(document.documentElement);
+        // Sort the yearly data for a clean chart
+        const sortedYearlyData = [...yearlyCounts.entries()].sort((a, b) => a[0] - b[0]);
+        
+        new Chart(yearlyCanvas, {
+            type: 'bar',
+            data: {
+                labels: sortedYearlyData.map(entry => entry[0]), // Years
+                datasets: [{
+                    label: 'Flights per Year',
+                    data: sortedYearlyData.map(entry => entry[1]), // Counts
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    }
     const seasonalityCanvas = document.getElementById('seasonality-chart');
     if (seasonalityCanvas) {
         const themeStyles = getComputedStyle(document.documentElement);
@@ -283,8 +316,8 @@ function calculateAndDisplayStats(allFlights, airportData) {
                 datasets: [{
                     label: 'Flights per Month',
                     data: monthCounts,
-                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-secondary-container').trim(),
-                    borderColor: themeStyles.getPropertyValue('--md-sys-color-secondary').trim(),
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
                     borderWidth: 1
                 }]
             },
@@ -316,8 +349,8 @@ function calculateAndDisplayStats(allFlights, airportData) {
                 datasets: [{
                     label: 'Flights per Weekday',
                     data: chartCounts,
-                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-secondary-container').trim(),
-                    borderColor: themeStyles.getPropertyValue('--md-sys-color-secondary').trim(),
+                    backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
+                    borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
                     borderWidth: 1
                 }]
             },

@@ -24,8 +24,17 @@ A list of potential features and improvements for the application.
   - [ ] Create a checklist of continents visited.
   - [ ] Track new airports/countries visited each year.
 
-- [ ] **The "Arctic Traveler" Stat** ❄️
-  > Add a personalised stat card to track all flights that cross the **Arctic Circle (66.5° N latitude)**.
+  ** Year-over-Year Comparison View 📊 **
+  - [ ] Create a new view on your stats page that lets you compare your travel between any two years. You could have two dropdown menus to select the years, and the page would show a side-by-side comparison of key metrics:
+
+  - [ ] Total Flights
+
+  - [ ] Total Distance
+
+  - [ ] New Countries Visited
+
+This would let you easily see how your travel patterns have evolved over time.
+
 
 ---
 
