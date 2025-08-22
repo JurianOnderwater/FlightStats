@@ -199,6 +199,11 @@ md-top-app-bar {
     border-radius: 16px; /* Match the map's border-radius */
 }
 
+.loading-cell {
+    text-align: center;
+    padding: 48px;
+}
+
 
 /* --- Chips --- */
 .chip-container {
