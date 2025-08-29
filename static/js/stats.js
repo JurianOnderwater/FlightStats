@@ -72,8 +72,8 @@ async function createCountryMap(visitedCountries) {
     });
 
     const themeStyles = getComputedStyle(document.documentElement);
-    const visitedColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();
-    const defaultColor = themeStyles.getPropertyValue('--md-sys-color-surface-variant').trim();
+    const visitedColor = themeStyles.getPropertyValue('--md-sys-color-primary').trim();
+    const defaultColor = themeStyles.getPropertyValue('--md-sys-color-map-land').trim();
 
     try {
         const response = await fetch('/static/countries_with_a2.geojson');
@@ -96,7 +96,7 @@ async function createCountryMap(visitedCountries) {
                     fillColor: isVisited ? visitedColor : defaultColor,
                     weight: 1,
                     opacity: 1,
-                    color: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
+                    color: themeStyles.getPropertyValue('--md-sys-color-map-border').trim(),
                     fillOpacity: 0.8
                 };
             }

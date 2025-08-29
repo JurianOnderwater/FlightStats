@@ -58,6 +58,12 @@
     --md-sys-color-primary-comp-red: #ba1a1a;
     --md-sys-color-primary-comp-purple: #563f82;
 
+    /* --- Map Background --- */
+    --md-sys-color-map: #D5DADC;
+    --md-sys-color-map-border: #EDE0E0;
+    --md-sys-color-map-land: #FAFAF8;
+
+
     /* --- Material 3 Typography Theme --- */
     /* Set the default font for most text components to Roboto Flex */
     --md-sys-typescale-body-large-font: 'Roboto Flex';
@@ -304,7 +310,7 @@ md-top-app-bar {
     width: 100%;
     border-radius: 12px;
     margin-top: 16px;
-    /* background-color: var(--md-sys-color-surface-container-low); */
+    background-color: var(--md-sys-color-map);
     /* background-color: var(--md-sys-color-surface-container-high); */
 }
 
