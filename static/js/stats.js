@@ -10,6 +10,13 @@ function haversine(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
+
+function compassdistance(c1, c2) {
+    R = 6371; // Radius of Earth in km
+    d = (c1 - c2) * Math.PI / 180;
+    return Math.abs(R * d)
+}
+
 const countryToContinent = {
     "AF": "Asia", "AX": "Europe", "AL": "Europe", "DZ": "Africa", "AS": "Oceania", "AD": "Europe", "AO": "Africa", "AI": "North America", "AQ": "Antarctica", "AG": "North America", "AR": "South America", "AM": "Asia", "AW": "North America", "AU": "Oceania", "AT": "Europe", "AZ": "Asia", "BS": "North America", "BH": "Asia", "BD": "Asia", "BB": "North America", "BY": "Europe", "BE": "Europe", "BZ": "North America", "BJ": "Africa", "BM": "North America", "BT": "Asia", "BO": "South America", "BQ": "North America", "BA": "Europe", "BW": "Africa", "BR": "South America", "IO": "Asia", "VG": "North America", "BN": "Asia", "BG": "Europe", "BF": "Africa", "BI": "Africa", "KH": "Asia", "CM": "Africa", "CA": "North America", "CV": "Africa", "KY": "North America", "CF": "Africa", "TD": "Africa", "CL": "South America", "CN": "Asia", "CX": "Asia", "CC": "Asia", "CO": "South America", "KM": "Africa", "CK": "Oceania", "CR": "North America", "HR": "Europe", "CU": "North America", "CW": "North America", "CY": "Asia", "CZ": "Europe", "CD": "Africa", "DK": "Europe", "DJ": "Africa", "DM": "North America", "DO": "North America", "EC": "South America", "EG": "Africa", "SV": "North America", "GQ": "Africa", "ER": "Africa", "EE": "Europe", "ET": "Africa", "FK": "South America", "FO": "Europe", "FJ": "Oceania", "FI": "Europe", "FR": "Europe", "GF": "South America", "PF": "Oceania", "GA": "Africa", "GM": "Africa", "GE": "Asia", "DE": "Europe", "GH": "Africa", "GI": "Europe", "GR": "Europe", "GL": "North America", "GD": "North America", "GP": "North America", "GU": "Oceania", "GT": "North America", "GG": "Europe", "GN": "Africa", "GW": "Africa", "GY": "South America", "HT": "North America", "HN": "North America", "HK": "Asia", "HU": "Europe", "IS": "Europe", "IN": "Asia", "ID": "Asia", "IR": "Asia", "IQ": "Asia", "IE": "Europe", "IM": "Europe", "IL": "Asia", "IT": "Europe", "CI": "Africa", "JM": "North America", "JP": "Asia", "JE": "Europe", "JO": "Asia", "KZ": "Asia", "KE": "Africa", "KI": "Oceania", "KW": "Asia", "KG": "Asia", "LA": "Asia", "LV": "Europe", "LB": "Asia", "LS": "Africa", "LR": "Africa", "LY": "Africa", "LI": "Europe", "LT": "Europe", "LU": "Europe", "MO": "Asia", "MK": "Europe", "MG": "Africa", "MW": "Africa", "MY": "Asia", "MV": "Asia", "ML": "Africa", "MT": "Europe", "MH": "Oceania", "MQ": "North America", "MR": "Africa", "MU": "Africa", "YT": "Africa", "MX": "North America", "FM": "Oceania", "MD": "Europe", "MC": "Europe", "MN": "Asia", "ME": "Europe", "MS": "North America", "MA": "Africa", "MZ": "Africa", "MM": "Asia", "NA": "Africa", "NR": "Oceania", "NP": "Asia", "NL": "Europe", "NC": "Oceania", "NZ": "Oceania", "NI": "North America", "NE": "Africa", "NG": "Africa", "NU": "Oceania", "NF": "Oceania", "KP": "Asia", "MP": "Oceania", "NO": "Europe", "OM": "Asia", "PK": "Asia", "PW": "Oceania", "PS": "Asia", "PA": "North America", "PG": "Oceania", "PY": "South America", "PE": "South America", "PH": "Asia", "PN": "Oceania", "PL": "Europe", "PT": "Europe", "PR": "North America", "QA": "Asia", "CG": "Africa", "RO": "Europe", "RU": "Europe", "RW": "Africa", "RE": "Africa", "BL": "North America", "SH": "Africa", "KN": "North America", "LC": "North America", "MF": "North America", "PM": "North America", "VC": "North America", "WS": "Oceania", "SM": "Europe", "ST": "Africa", "SA": "Asia", "SN": "Africa", "RS": "Europe", "SC": "Africa", "SL": "Africa", "SG": "Asia", "SX": "North America", "SK": "Europe", "SI": "Europe", "SB": "Oceania", "SO": "Africa", "ZA": "Africa", "GS": "Antarctica", "KR": "Asia", "SS": "Africa", "ES": "Europe", "LK": "Asia", "SD": "Africa", "SR": "South America", "SJ": "Europe", "SZ": "Africa", "SE": "Europe", "CH": "Europe", "SY": "Asia", "TW": "Asia", "TJ": "Asia", "TZ": "Africa", "TH": "Asia", "TL": "Asia", "TG": "Africa", "TK": "Oceania", "TO": "Oceania", "TT": "North America", "TN": "Africa", "TR": "Asia", "TM": "Asia", "TC": "North America", "TV": "Oceania", "UG": "Africa", "UA": "Europe", "AE": "Asia", "GB": "Europe", "US": "North America", "UM": "Oceania", "VI": "North America", "UY": "South America", "UZ": "Asia", "VU": "Oceania", "VA": "Europe", "VE": "South America", "VN": "Asia", "WF": "Oceania", "EH": "Africa", "YE": "Asia", "ZM": "Africa", "ZW": "Africa"
 };
@@ -118,6 +125,121 @@ async function createCountryMap(visitedCountries) {
     } catch (error) {
         console.error("Failed to load GeoJSON data for country map:", error);
     }
+}
+
+async function calculateAndDisplayHometownStats(allFlights, airportData) {
+    const setupContainer = document.getElementById('hometown-setup');
+    if (!setupContainer) {
+        return;
+    }
+    const displayContainer = document.getElementById('hometown-display');
+    const setBtn = document.getElementById('set-hometown-btn');
+    const changeBtn = document.getElementById('change-hometown-btn');
+    const dialog = document.getElementById('hometown-dialog');
+    const dialogInput = document.getElementById('hometown-input');
+
+    const render = () => {
+        const hometownIata = localStorage.getItem('hometownIata');
+
+        if (!hometownIata || !airportData.has(hometownIata)) {
+            setupContainer.style.display = 'flex';
+            displayContainer.style.display = 'none';
+        } else {
+            setupContainer.style.display = 'none';
+            displayContainer.style.display = 'flex';
+            
+            document.getElementById('hometown-iata').textContent = hometownIata;
+            
+            const homeCoords = airportData.get(hometownIata);
+            const uniqueAirports = [...new Set(allFlights.flatMap(f => [f.origin, f.destination]))];
+
+            let northernmost = {iata: 'N/A', lat: 0, dist: 0};
+            let southernmost = {iata: 'N/A', lat: 0, dist: 0};
+            let easternmost = {iata: 'N/A', lng: 0, dist: 0};
+            let westernmost = {iata: 'N/A', lng: 0, dist: 0};
+
+            if (homeCoords && homeCoords.lat && homeCoords.lng) {
+                northernmost = {iata: hometownIata, lat: homeCoords.lat, dist: 0};
+                southernmost = {iata: hometownIata, lat: homeCoords.lat, dist: 0};
+                easternmost = {iata: hometownIata, lng: homeCoords.lng, dist: 0};
+                westernmost = {iata: hometownIata, lng: homeCoords.lng, dist: 0};
+            }
+
+            const hometownFlights = allFlights.filter(f => f.origin === hometownIata);
+            const uniqueDestinations = [...new Set(hometownFlights.map(f => f.destination))];
+            uniqueDestinations.forEach(iata => {
+                const airport = airportData.get(iata);
+                if (airport) {
+                    if (airport.lat > northernmost.lat) northernmost = { iata, lat: airport.lat, dist: compassdistance(homeCoords.lat, airport.lat), city: airport.city };
+                    if (airport.lng > easternmost.lng) easternmost = { iata, lng: airport.lng, dist: compassdistance(homeCoords.lng, airport.lng), city: airport.city };
+                    if (airport.lat < southernmost.lat) southernmost = { iata, lng: airport.lng, dist: compassdistance(homeCoords.lat, airport.lat), city: airport.city };
+                    if (airport.lng < westernmost.lng) westernmost = { iata, lng: airport.lng, dist: compassdistance(homeCoords.lng, airport.lng), city: airport.city };
+                }
+            });
+
+            document.querySelector('#northernmost-li span').textContent = `${northernmost.city} (${Math.round(northernmost.dist).toLocaleString()} km)`;
+            document.querySelector('#easternmost-li span').textContent = `${easternmost.city} (${Math.round(easternmost.dist).toLocaleString()} km)`;
+            document.querySelector('#southernmost-li span').textContent = `${southernmost.city} (${Math.round(southernmost.dist).toLocaleString()} km)`;
+            document.querySelector('#westernmost-li span').textContent = `${westernmost.city} (${Math.round(westernmost.dist).toLocaleString()} km)`;
+
+            const mapContainer = document.getElementById('hometown-map');
+            if (mapContainer._leaflet_id) {
+                mapContainer._leaflet_id = null;
+            }
+            mapContainer.innerHTML = '';
+
+
+            const map = L.map('hometown-map', { attributionControl: false, zoomControl: false });
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+            const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
+
+            const points = [homeCoords];
+            const destinations = [northernmost, southernmost, easternmost, westernmost];
+            const bounds = L.latLngBounds();
+            bounds.extend([homeCoords.lat, homeCoords.lng]);
+
+            const themeStyles = getComputedStyle(document.documentElement);
+            const homeColor = themeStyles.getPropertyValue('--md-sys-color-comp-yellow').trim();
+            const compassColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();
+            const lineColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-green').trim();
+
+            L.circleMarker([homeCoords.lat, homeCoords.lng], { radius: 6, fillColor: homeColor, color: '#FFF', weight: 1, fillOpacity: 1 }).addTo(map)
+            .bindTooltip(hometownIata, tooltipOptions)
+            .openTooltip();
+
+            destinations.forEach(dest => {
+                if (dest.iata !== 'N/A') {
+                    const destCoords = airportData.get(dest.iata);
+                    points.push(destCoords);
+                    L.circleMarker([destCoords.lat, destCoords.lng], { radius: 4, fillColor: lineColor, color: '#FFF', weight: 1, fillOpacity: 0.8 }).addTo(map)
+                    .bindTooltip(dest.iata, tooltipOptions)
+                    .openTooltip();
+                    
+                    const line = L.polyline(getGreatCirclePoints(L.latLng(homeCoords.lat, homeCoords.lng), L.latLng(destCoords.lat, destCoords.lng)), { color: lineColor, weight: 1.5, opacity: 0.7 });
+                    line.addTo(map);
+                    bounds.extend([destCoords.lat, destCoords.lng]);
+                }
+            });
+            
+            map.fitBounds(bounds, { padding: [20, 20] });
+        }
+    };
+
+    const promptForHometown = () => {
+        const iata = prompt("Please enter your hometown's 3-letter IATA code (e.g., TOS, LHR, JFK):");
+        if (iata && iata.length === 3 && airportData.has(iata.toUpperCase())) {
+            localStorage.setItem('hometownIata', iata.toUpperCase());
+            render();
+        } else if (iata) {
+            alert("Invalid IATA code. Please try again.");
+        }
+    };
+
+    setBtn.addEventListener('click', promptForHometown);
+    changeBtn.addEventListener('click', promptForHometown);
+
+    render();
 }
 
 /**
@@ -385,6 +507,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
 
     createCountryMap(uniqueCountries);
     createSunburstChart(allFlights, airportData);
+    calculateAndDisplayHometownStats(allFlights, airportData);
     return {
         uniqueYears: [...uniqueYears].sort((a, b) => b - a),
     };}

@@ -264,9 +264,12 @@ md-top-app-bar {
     margin-top: 16px;
 }
 
-/* Make this card span 2 columns */
+/* Make this card span 2 or 3 columns */
 .full-width-card {
     grid-column: span 2;
+}
+.full-width-card-3-col {
+    grid-column: span 3;
 }
 
 /* Advanced stats */
@@ -301,7 +304,8 @@ md-top-app-bar {
     width: 100%;
     border-radius: 12px;
     margin-top: 16px;
-    background-color: var(--md-sys-color-surface-container-low);
+    /* background-color: var(--md-sys-color-surface-container-low); */
+    /* background-color: var(--md-sys-color-surface-container-high); */
 }
 
 /* Records card */
@@ -330,6 +334,52 @@ md-top-app-bar {
 .record-distance {
     font-weight: 500;
     color: var(--md-sys-color-primary);
+}
+
+
+/* Initial setup view styles */
+.hometown-setup-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 32px;
+    gap: 16px;
+}
+
+/* Main display view styles */
+.hometown-display-container {
+    display: flex;
+    height: 300px; /* Give the container a fixed height */
+    /* background-color: var(--md-sys-color-surface-container-low); */
+}
+
+.hometown-list {
+    flex-basis: 33%;
+    padding-right: 16px;
+}
+
+.hometown-list ul {
+    list-style-type: none;
+    padding-left: 0;
+}
+
+.hometown-list li {
+    margin-bottom: 12px;
+}
+
+.hometown-map {
+    flex-grow: 1;
+    border-radius: 12px;
+    /* background-color: var(--md-sys-color-surface-container-low); */
+    /* background-color: var(--md-sys-color-surface-container-high); */
+}
+.hometown-map .leaflet-container {
+    background-color: transparent;
+}
+#hometown-map .leaflet-tile-pane {
+    background-color: transparent !important;
 }
 
 

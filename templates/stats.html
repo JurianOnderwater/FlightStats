@@ -79,9 +79,48 @@
                 </div>
             </div>
         </div>
+        <div class="stats-card full-width-card-3-col">
+            <h2>Compass 🧭</h2>
+            <div id="hometown-card-content">
+                <div id="hometown-setup" class="hometown-setup-container">
+                    <p>Set a hometown to see your most northern, southern, eastern, and western destinations.</p>
+                    <md-filled-button id="set-hometown-btn">Set Hometown</md-filled-button>
+                </div>
+
+                <div id="hometown-display" class="hometown-display-container" style="display: none;">
+                    <div class="hometown-list">
+                        <p>Your farthest points from <b id="hometown-iata">HOME</b>:</p>
+                        <ul>
+                            <li id="northernmost-li"><b>North:</b> <span>Calculating...</span></li>
+                            <li id="easternmost-li"><b>East:</b> <span>Calculating...</span></li>
+                            <li id="southernmost-li"><b>South:</b> <span>Calculating...</span></li>
+                            <li id="westernmost-li"><b>West:</b> <span>Calculating...</span></li>
+                        </ul>
+                        <md-text-button id="change-hometown-btn">Change Hometown</md-text-button>
+                    </div>
+                    <div id="hometown-map" class="hometown-map"></div>
+                </div>
+            </div>
+        </div>
         
 
     </div>
+    <md-dialog id="hometown-dialog">
+        <div slot="headline">Set Your Hometown</div>
+        <form slot="content" id="hometown-form" class="add-form" method="dialog">
+            <p>Enter the 3-letter IATA code for your home airport (e.g., TOS, LHR, JFK).</p>
+            <md-outlined-text-field
+                label="Hometown IATA Code"
+                id="hometown-input"
+                required
+                maxlength="3">
+            </md-outlined-text-field>
+        </form>
+        <div slot="actions">
+            <md-text-button form="hometown-form" value="cancel">Cancel</md-text-button>
+            <md-filled-button form="hometown-form" value="save">Save</md-filled-button>
+        </div>
+    </md-dialog>
 {% endblock %}
 
 {% block scripts %}
@@ -90,6 +129,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script src="{{ url_for('static', filename='js/stats.js') }}"></script>
 
     <script>
