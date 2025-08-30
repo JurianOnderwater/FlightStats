@@ -277,15 +277,19 @@ md-top-app-bar {
 .full-width-card-3-col {
     grid-column: span 3;
 }
-/* Add to the end of your style.css file */
+
+@keyframes jiggle {
+    0% { transform: rotate(-0.5deg); }
+    50% { transform: rotate(0.5deg); }
+    100% { transform: rotate(-0.5deg); }
+}
 
 #edit-order-fab {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    z-index: 100;
+    z-index: 1000;
 }
-
 
 .stats-grid.edit-mode {
     background-image: repeating-linear-gradient(45deg, transparent, transparent 34px, hsla(0,0%,59.2%,.1) 35px, hsla(0,0%,59.2%,.1) 70px);
@@ -295,6 +299,11 @@ md-top-app-bar {
     outline: 3px solid var(--md-sys-color-primary);
     cursor: grab;
     user-select: none;
+    animation: jiggle 0.3s infinite;
+}
+
+.stats-grid.edit-mode .stats-card:nth-child(2n) {
+    animation-delay: -0.15s;
 }
 
 .stats-card.sortable-ghost {
@@ -305,6 +314,7 @@ md-top-app-bar {
 .stats-card.sortable-drag {
     opacity: 0.9;
     cursor: grabbing;
+    animation: none;
 }
 
 /* Advanced stats */
