@@ -354,28 +354,35 @@ md-top-app-bar {
 }
 
 /* Records card */
-.record-card {
-    background-color: var(--md-sys-color-surface-container-low);
-    padding: 16px;
-    border-radius: 12px;
-    margin-top: 16px;
-}
 .record-container {
-    display: flex;
-    justify-content: space-around;
-    text-align: center;
-    gap: 16px;
-    margin-top: 16px;
+    display: flex;         /* Use flexbox for layout */
+    flex-direction: row;   /* Arrange items side-by-side */
+    gap: 16px;             /* Create space between the two containers */
+    width: 100%;           /* Ensure the container fills the card */
 }
+
+.record-item-container {
+    flex: 1;               /* Makes both containers share space equally */
+    background-color: var(--md-sys-color-surface-container-high);
+    border-radius: 12px;
+    padding: 16px;
+    box-sizing: border-box;
+    text-align: center;
+    /* margin-bottom has been removed to fix the alignment issue */
+}
+
 .record-item h3 {
     margin: 0 0 8px 0;
     font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
 }
+
 .record-item p {
     margin: 4px 0;
     font-size: 16px;
+    word-break: break-word;
 }
+
 .record-distance {
     font-weight: 500;
     color: var(--md-sys-color-primary);
