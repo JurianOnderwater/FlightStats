@@ -1,8 +1,8 @@
 // static/js/stats.js
 
-// Add this new function to your stats.js file
 
 function initCardReordering() {
+    if (!document.querySelector('.stats-grid')) return;
     const editFab = document.getElementById('edit-order-fab');
     const statsGrid = document.querySelector('.stats-grid');
     let sortableInstance = null;
@@ -72,17 +72,31 @@ function initCardReordering() {
     loadCardOrder();
 }
 
-
-// Find your existing DOMContentLoaded listener and add the call to the new function
 document.addEventListener('DOMContentLoaded', async () => {
-    // This guard clause ensures this code only runs on the stats page
-    if (!document.querySelector('.stats-grid')) return;
+    // --- THIS IS THE FIX ---
+    // If the main stats grid isn't on the page, stop running this script.
+    if (!document.querySelector('.stats-grid')) {
+        return;
+    }
 
-    // Add this line to initialise the reordering feature
     initCardReordering(); 
 
     const loader = document.getElementById('loader-container');
-    // ... rest of your existing code
+    if (loader) loader.style.display = 'flex';
+
+    // try {
+    //     const [allFlights, airportData] = await Promise.all([
+    //         allFlights(),
+    //         airportData() // Assuming you have a function to get this
+    //     ]);
+
+    //     calculateAndDisplayStats(allFlights, airportData);
+        
+    // } catch (error) {
+    //     console.error("Failed to load data for stats page:", error);
+    // } finally {
+    //     if (loader) loader.style.display = 'none';
+    // }
 });
 
 function createSunburstChart(allFlights, airportData) {

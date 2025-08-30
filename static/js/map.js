@@ -27,7 +27,11 @@ function getGreatCirclePoints(start, end) {
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- 1. Initialise Viewers ---
-    const map = L.map('map').setView([20, 0], 2);
+    const map = L.map('map', {
+        // This option prevents dragging the map outside the world bounds
+        maxBounds: [[-90, -180], [90, 180]]
+    }).setView([20, 0], 2);
+    
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(map);
