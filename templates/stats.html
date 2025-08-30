@@ -7,33 +7,33 @@
     </div>
 
     <div class="stats-grid">
-        <div class="stats-card">
+        <div class="stats-card" id="distance-card">
             <h2>Distance ↔️</h2>
             <p><strong>Total Kilometres:</strong> <span id="total-km">0</span> km</p>
             <p><strong>Total Miles:</strong> <span id="total-miles">0</span> mi</p>
             <p><strong>Earth Circumnavigations:</strong> <span id="earth-circumnavigations">0</span></p>
             <p><strong>Journey to the Moon:</strong> <span id="percent-to-moon">0</span>%</p>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="time-card">
             <h2>Time (Estimated) ⏱️</h2>
             <p><strong>Total Hours Flown:</strong> <span id="total-hours">0</span></p>
             <p><strong>Total Days Flown:</strong> <span id="total-days">0</span></p>
             <p><strong>Total Weeks Flown:</strong> <span id="total-weeks">0</span></p>
             <p><strong>Total Months Flown:</strong> <span id="total-months">0</span></p>
         </div>
-        <div class="stats-card sunburst-card">
+        <div class="stats-card sunburst-card" id="distribution-card">
             <h2>Travel Distribution ☀️</h2>
             <div id="sunburst-chart" style="width: 100%; height: 600px;"></div>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="top-airports-card">
             <h2>Top 10 Airports 🛬</h2>
             <ol id="top-airports-list" class="stats-list"></ol>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="top-routes-card">
             <h2>Top 10 Routes 🗺️</h2>
             <ol id="top-routes-list" class="stats-list"></ol>
         </div>
-        <div class="stats-card full-width-card">
+        <div class="stats-card full-width-card" id="milestones-card">
             <h2>Distance Milestones 🏁</h2>
             <div class="milestones-container">
                 <ul id="milestones-list" class="stats-list"></ul>
@@ -42,29 +42,29 @@
                 </div>
             </div>
         </div>
-        <div class="stats-card full-width-card">
+        <div class="stats-card full-width-card" id="countries-card">
             <h2>Visited Countries 🌍</h2>
             <div id="country-map"></div>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="yearly-card">
             <h2>Flights by Year 🎆</h2>
             <div class="chart-container">
                 <canvas id="yearly-chart"></canvas>
             </div>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="monthly-card">
             <h2>Flights by Month 🗓️</h2>
             <div class="chart-container">
                 <canvas id="seasonality-chart"></canvas>
             </div>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="weekday-card">
             <h2>Flights by Weekday 📊</h2>
             <div class="chart-container">
                 <canvas id="weekday-chart"></canvas>
             </div>
         </div>
-        <div class="stats-card">
+        <div class="stats-card" id="records-card">
             <h2>Flight Records 🥇</h2>
             <div class="record-container">
                 <div class="record-item">
@@ -79,7 +79,7 @@
                 </div>
             </div>
         </div>
-        <div class="stats-card full-width-card-3-col">
+        <div class="stats-card full-width-card-3-col" id="compass-card">
             <h2>Compass 🧭</h2>
             <div id="hometown-card-content">
                 <div id="hometown-setup" class="hometown-setup-container">
@@ -102,9 +102,8 @@
                 </div>
             </div>
         </div>
-        
-
     </div>
+
     <md-dialog id="hometown-dialog">
         <div slot="headline">Set Your Hometown</div>
         <form slot="content" id="hometown-form" class="add-form" method="dialog">
@@ -121,6 +120,10 @@
             <md-filled-button form="hometown-form" value="save">Save</md-filled-button>
         </div>
     </md-dialog>
+
+    <md-fab id="edit-order-fab" variant="secondary" aria-label="Edit layout">
+        <span slot="icon" class="material-symbols-outlined">edit</span>
+    </md-fab>
 {% endblock %}
 
 {% block scripts %}
