@@ -1,9 +1,90 @@
 // static/js/stats.js
 
+// Add this new function to your stats.js file
 
-/**
- * Creates a sunburst chart of travel distribution.
- */
+function initCardReordering() {
+    const editFab = document.getElementById('edit-order-fab');
+    const statsGrid = document.querySelector('.stats-grid');
+    let sortableInstance = null;
+    const STORAGE_KEY = 'statsCardOrder';
+
+    // 1. Load the saved order on page load
+    const loadCardOrder = () => {
+        const savedOrder = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (savedOrder) {
+            savedOrder.forEach(cardId => {
+                const card = document.getElementById(cardId);
+                if (card) {
+                    statsGrid.appendChild(card);
+                }
+            });
+        }
+    };
+
+    // 2. Function to save the current order
+    const saveCardOrder = () => {
+        const cardOrder = [...statsGrid.children].map(card => card.id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cardOrder));
+    };
+
+    // 3. Enable edit mode and SortableJS
+    const enableEditMode = () => {
+        statsGrid.classList.add('edit-mode');
+        if (sortableInstance) {
+            sortableInstance.option('disabled', false);
+        } else {
+            sortableInstance = new Sortable(statsGrid, {
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                onEnd: () => {
+                    saveCardOrder(); // Save order when drag ends
+                }
+            });
+        }
+    };
+
+    // 4. Disable edit mode
+    const disableEditMode = () => {
+        statsGrid.classList.remove('edit-mode');
+        if (sortableInstance) {
+            sortableInstance.option('disabled', true);
+        }
+    };
+
+    // 5. Event Listeners
+    editFab.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (statsGrid.classList.contains('edit-mode')) {
+            disableEditMode();
+        } else {
+            enableEditMode();
+        }
+    });
+
+    document.addEventListener('click', (event) => {
+        if (statsGrid.classList.contains('edit-mode') && !event.target.closest('.stats-card') && event.target !== editFab) {
+            disableEditMode();
+        }
+    });
+
+    // Initial load
+    loadCardOrder();
+}
+
+
+// Find your existing DOMContentLoaded listener and add the call to the new function
+document.addEventListener('DOMContentLoaded', async () => {
+    // This guard clause ensures this code only runs on the stats page
+    if (!document.querySelector('.stats-grid')) return;
+
+    // Add this line to initialise the reordering feature
+    initCardReordering(); 
+
+    const loader = document.getElementById('loader-container');
+    // ... rest of your existing code
+});
+
 function createSunburstChart(allFlights, airportData) {
     const chartDom = document.getElementById('sunburst-chart');
     if (!chartDom) return;
@@ -58,8 +139,6 @@ function createSunburstChart(allFlights, airportData) {
     };
     myChart.setOption(option);
 }
-
-// In static/js/stats.js, replace the createCountryMap function
 
 async function createCountryMap(visitedCountries) {
     const mapElement = document.getElementById('country-map');
@@ -181,7 +260,7 @@ async function calculateAndDisplayHometownStats(allFlights, airportData) {
             bounds.extend([homeCoords.lat, homeCoords.lng]);
 
             const themeStyles = getComputedStyle(document.documentElement);
-            const homeColor = themeStyles.getPropertyValue('--md-sys-color-comp-yellow').trim();
+            const homeColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-yellow').trim();
             const compassColor = themeStyles.getPropertyValue('--md-sys-color-primary-container').trim();
             const lineColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-green').trim();
 
@@ -223,9 +302,6 @@ async function calculateAndDisplayHometownStats(allFlights, airportData) {
     render();
 }
 
-/**
- * Takes flight data, calculates all stats, and updates the DOM elements that it finds.
- */
 function calculateAndDisplayStats(allFlights, airportData) {
     if (!allFlights || allFlights.length === 0) return [];
 
