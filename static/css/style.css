@@ -170,7 +170,6 @@ md-top-app-bar {
     opacity: 0.8;
     font-size: 10px;
     font-weight: bold;
-    /* Add a subtle stroke to make text more readable on any background */
     text-shadow: -1px -1px 0 #FFF, 1px -1px 0 #FFF, -1px 1px 0 #FFF, 1px 1px 0 #FFF;
 }
 
@@ -200,7 +199,7 @@ md-top-app-bar {
     display: none; /* Hidden by default */
     justify-content: center;
     align-items: center;
-    background-color: rgba(251, 253, 247, 0.7); /* A semi-transparent overlay using your theme's background colour */
+    background-color: rgba(251, 253, 247, 0.7);
     z-index: 1500; /* Ensure it's on top of the map */
     border-radius: 16px; /* Match the map's border-radius */
 }
@@ -270,7 +269,6 @@ md-top-app-bar {
     margin-top: 16px;
 }
 
-/* Make this card span 2 or 3 columns */
 .full-width-card {
     grid-column: span 2;
 }
@@ -448,7 +446,7 @@ md-top-app-bar {
     flex-direction: column;
     gap: 16px;
 }
-/* Add these new rules to style.css */
+
 .input-row {
     display: flex;
     gap: 16px; /* Space between the two input fields */
@@ -461,7 +459,6 @@ md-top-app-bar {
     gap: 4px;
 }
 
-/* Find your existing .styled-input rule and remove the "width" property */
 .styled-input {
     /* width: 100%; */ /* REMOVE THIS LINE */
     padding: 16px;

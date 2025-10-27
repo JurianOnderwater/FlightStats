@@ -26,9 +26,9 @@ function getGreatCirclePoints(start, end) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- 1. Initialise Viewers ---
+    // --- Initialise Viewers ---
     const map = L.map('map', {
-        // This option prevents dragging the map outside the world bounds
+        // prevent dragging the map outside the world bounds
         maxBounds: [[-90, -180], [90, 180]]
     }).setView([20, 0], 2);
     
@@ -39,11 +39,11 @@ document.addEventListener('DOMContentLoaded', () => {
     //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     // }).addTo(map);
 
-    // --- 2. Initialise ECharts Globe View ---
+    // --- Initialise ECharts Globe View ---
     const globeContainer = document.getElementById('cesium-container'); // Reusing the old container
     const globeChart = echarts.init(globeContainer);
 
-    // --- 2. Setup UI and Data Storage ---
+    // --- Setup UI and Data Storage ---
     const layersByYear = {};
     const loader = document.getElementById('loader-container');
     let allEchartsRoutes = []; // To store flight data for ECharts
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (loader) loader.style.display = 'flex';
 
-    // --- 3. Fetch and Process Data ---
+    // --- Fetch and Process Data ---
     fetch('/static/airports.csv')
         .then(response => response.text())
         .then(csvText => {
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const { uniqueYears } = calculateAndDisplayStats(allFlights, airportData);
                     const aggregatedRoutes = new Map();
 
-                    // --- 5. Prepare Data and Draw for Both Views ---
+                    // --- Prepare Data and Draw for Both Views ---
                     allFlights.forEach(flight => {
                         const origin = airportData.get(flight.origin);
                         const dest = airportData.get(flight.destination);
@@ -121,8 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
                             const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
                             
-                            // *** THIS IS THE FIX ***
-                            // Open the tooltip immediately when the marker is created.
                             const startDot = L.circleMarker(startPointL, markerOptions).bindTooltip(flight.origin, tooltipOptions).openTooltip();
                             const endDot = L.circleMarker(endPointL, markerOptions).bindTooltip(flight.destination, tooltipOptions).openTooltip();
                             const leafletLayer = L.featureGroup([leafletLine, startDot, endDot]);
@@ -130,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (!layersByYear[year]) layersByYear[year] = [];
                             layersByYear[year].push({ leaflet: leafletLayer });
 
-                            // B. Prepare ECharts route data
                             const lineWeightDouble = lineWeight * 2;
                             allEchartsRoutes.push({
                                 year: year,
@@ -140,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
 
-                    // --- 6. Configure and Render ECharts Globe ---
+                    // --- Configure and Render Globe ---
                     globeChart.setOption({
                         backgroundColor: '#000011',
                         globe: {
@@ -168,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 
-                    // --- 7. Create Filter Chips with updated logic ---
+                    // --- Create Filter Chips ---
                     const chipContainer = document.getElementById('chip-container');
                     chipContainer.innerHTML = '';
                     const selectedYears = new Set(uniqueYears);
@@ -181,25 +178,24 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (chip.selected) selectedYears.add(year);
                             else selectedYears.delete(year);
 
-                            // Filter Leaflet
+                            // Filter Map
                             const leafletLayers = layersByYear[year] || [];
                             leafletLayers.forEach(l => chip.selected ? map.addLayer(l.leaflet) : map.removeLayer(l.leaflet));
 
-                            // Filter ECharts
+                            // Filter Globe
                             const filteredRoutes = allEchartsRoutes.filter(r => selectedYears.has(r.year));
                             globeChart.setOption({ series: { data: filteredRoutes.map(r => r.coords) } });
                         });
                         chipContainer.appendChild(chip);
                     });
 
-                    // Initially add all Leaflet layers
                     for (const year in layersByYear) {
                         layersByYear[year].forEach(l => map.addLayer(l.leaflet));
                     }
 
-                    // --- 7. Find and Draw Longest/Shortest Flights ---
+                    // --- Find and Draw Longest/Shortest Flights ---
                     if (allFlights.length >= 2) {
-                        // First, ensure every flight has a calculated distance
+                        // First ensure every flight has a distance
                         allFlights.forEach(flight => {
                             if (typeof flight.distance === 'undefined') {
                                 const origin = airportData.get(flight.origin);

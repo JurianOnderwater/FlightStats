@@ -73,8 +73,6 @@ function initCardReordering() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // --- THIS IS THE FIX ---
-    // If the main stats grid isn't on the page, stop running this script.
     if (!document.querySelector('.stats-grid')) {
         return;
     }
@@ -325,7 +323,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const uniqueYears = new Set();
     const monthCounts = Array(12).fill(0);
     const weekdayCounts = Array(7).fill(0);
-    const yearlyCounts = new Map(); // Map to store flight counts per year
+    const yearlyCounts = new Map();
     
     
     const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -341,12 +339,12 @@ function calculateAndDisplayStats(allFlights, airportData) {
 
         const flightDate = new Date(flight.date);
         const year = flightDate.getFullYear();
-        const month = flightDate.getMonth(); // Get month (0-11)
-        const weekday = flightDate.getDay(); // Get day of week (0=Sun, 1=Mon, etc.)        
+        const month = flightDate.getMonth();
+        const weekday = flightDate.getDay();     
         
         
         uniqueYears.add(year);
-        monthCounts[month]++; // Increment count for the month
+        monthCounts[month]++; 
         weekdayCounts[weekday]++;
         yearlyCounts.set(year, (yearlyCounts.get(year) || 0) + 1);
 
@@ -467,7 +465,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
             }
         });
     }
-    // --- 5. Create the Seasonality Chart (NEW) ---
+    // --- 5. Create the Seasonality Chart ---
     const yearlyCanvas = document.getElementById('yearly-chart');
     if (yearlyCanvas) {
         const themeStyles = getComputedStyle(document.documentElement);
@@ -477,10 +475,10 @@ function calculateAndDisplayStats(allFlights, airportData) {
         new Chart(yearlyCanvas, {
             type: 'bar',
             data: {
-                labels: sortedYearlyData.map(entry => entry[0]), // Years
+                labels: sortedYearlyData.map(entry => entry[0]),
                 datasets: [{
                     label: 'Flights per Year',
-                    data: sortedYearlyData.map(entry => entry[1]), // Counts
+                    data: sortedYearlyData.map(entry => entry[1]), 
                     backgroundColor: themeStyles.getPropertyValue('--md-sys-color-primary-container').trim(),
                     borderColor: themeStyles.getPropertyValue('--md-sys-color-primary').trim(),
                     borderWidth: 1
@@ -527,7 +525,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
             }
         });
     }
-    // --- 6. Create the Weekday Chart (NEW) ---
+    // --- 6. Create the Weekday Chart ---
     const weekdayCanvas = document.getElementById('weekday-chart');
     if (weekdayCanvas) {
         const themeStyles = getComputedStyle(document.documentElement);
@@ -564,7 +562,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const shortestFlight = sortedByDist[0];
     const longestFlight = sortedByDist[sortedByDist.length - 1];
     
-    // --- NEW: Populate the Flight Records card ---
+    // ---Populate the Flight Records card ---
     if (shortestFlight) {
         updateText('shortest-flight-route', `${shortestFlight.origin}<br> ↓ <br>${shortestFlight.destination}`);
         updateText('shortest-flight-dist', `${Math.round(shortestFlight.distance).toLocaleString()} km`);
