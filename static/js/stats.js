@@ -4,17 +4,15 @@
 let distanceChartInstance = null;
 let seasonalityChartInstance = null;
 let weekdayChartInstance = null;
-let yearChartInstance = null; // NEW
+let yearlyChartInstance = null; // Updated name
 let sunburstChartInstance = null;
 let countryMapInstance = null;
 let countryGeoJsonLayer = null;
+let hometownMapInstance = null; // New for compass
 let globalVisitedCountries = new Set();
 
-// NOTE: countryToContinent is assumed to be loaded globally from utils.js or another file.
+// --- Helpers (Ensure these are defined if not in utils.js) ---
 
-/**
- * Calculates distance between two lat/lng points in km using the Haversine formula.
- */
 function haversine(lat1, lon1, lat2, lon2) {
     const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -26,9 +24,6 @@ function haversine(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
-/**
- * Helper to get current CSS variables
- */
 function getThemeColors() {
     const styles = getComputedStyle(document.documentElement);
     return {
@@ -44,13 +39,16 @@ function getThemeColors() {
     };
 }
 
+
+// --- Specific Chart Logic ---
+
 async function createCountryMap(visitedCountries) {
     const mapElement = document.getElementById('country-map');
     if (!mapElement) return;
 
     if (!countryMapInstance) {
         countryMapInstance = L.map(mapElement, {
-            center: [20, 0], zoom: 2, attributionControl: false,
+            center: [20, 0], zoom: 1, attributionControl: false,
             zoomControl: false, dragging: true, scrollWheelZoom: true
         });
     }
@@ -59,12 +57,10 @@ async function createCountryMap(visitedCountries) {
         const colors = getThemeColors();
         let countryCode = feature.properties.ISO_A2;
         if (countryCode === '-99' || !countryCode) countryCode = feature.properties.ISO_A2_EH;
-        
         const isVisited = countryCode && visitedCountries.has(countryCode.toUpperCase());
         return {
             fillColor: isVisited ? colors.onPrimaryContainer : colors.surfaceVariant,
-            weight: 1, opacity: 1,
-            color: colors.primary, fillOpacity: 0.8
+            weight: 1, opacity: 1, color: colors.primary, fillOpacity: 0.8
         };
     };
 
@@ -87,6 +83,7 @@ function createSunburstChart(allFlights, airportData) {
 
     if (!sunburstChartInstance) {
         sunburstChartInstance = echarts.init(chartDom);
+        window.addEventListener('resize', () => sunburstChartInstance.resize());
     }
 
     const hierarchy = {};
@@ -99,16 +96,8 @@ function createSunburstChart(allFlights, airportData) {
     for (const [iata, count] of airportVisits.entries()) {
         const airport = airportData.get(iata);
         if (!airport || !airport.country || !airport.city) continue;
-        
-        // Ensure countryToContinent is available (loaded via utils.js or global scope)
-        if (typeof countryToContinent === 'undefined') {
-            console.warn("countryToContinent map not found!");
-            continue;
-        }
-
         const continent = countryToContinent[airport.country];
         if (!continent) continue;
-
         if (!hierarchy[continent]) hierarchy[continent] = { name: continent, children: {} };
         if (!hierarchy[continent].children[airport.country]) hierarchy[continent].children[airport.country] = { name: airport.country, children: {} };
         if (!hierarchy[continent].children[airport.country].children[airport.city]) {
@@ -131,27 +120,145 @@ function createSunburstChart(allFlights, airportData) {
         series: {
             type: 'sunburst', data: echartsData, radius: [0, '95%'], sort: undefined,
             emphasis: { focus: 'ancestor' },
-            levels: [{}, { r0: '15%', r: '40%', itemStyle: { borderWidth: 2, borderColor: colors.surfaceBorder }, label: { rotate: 'tangential' } },
+            levels: [
+                {}, 
+                { r0: '15%', r: '40%', itemStyle: { borderWidth: 2, borderColor: colors.surfaceBorder }, label: { rotate: 'tangential' } },
                 { r0: '40%', r: '70%', itemStyle: { borderColor: colors.surfaceBorder }, label: { align: 'right' } },
                 { r0: '70%', r: '72%', label: { position: 'outside', padding: 3, silent: false }, itemStyle: { borderWidth: 3, borderColor: colors.surfaceBorder } }
             ]
         }
     };
     sunburstChartInstance.setOption(option);
-    window.addEventListener('resize', () => sunburstChartInstance.resize());
 }
 
-function calculateAndDisplayStats(allFlights, airportData) {
-    if (!allFlights || allFlights.length === 0) return { uniqueYears: [] };
+// --- NEW: Compass / Hometown Stats Logic ---
+function initCompassStat(allFlights, airportData) {
+    const container = document.getElementById('hometown-card-content');
+    if (!container) return;
 
-    // 1. Data Processing
+    const setupDiv = document.getElementById('hometown-setup');
+    const displayDiv = document.getElementById('hometown-display');
+    const setBtn = document.getElementById('set-hometown-btn');
+    const changeBtn = document.getElementById('change-hometown-btn');
+    const dialog = document.getElementById('hometown-dialog');
+    const dialogForm = document.getElementById('hometown-form');
+    const dialogCancel = document.querySelector('md-text-button[value="cancel"]');
+    const dialogSave = document.querySelector('md-filled-button[value="save"]');
+    const hometownInput = document.getElementById('hometown-input');
+    
+    // Load saved hometown
+    let hometownIata = localStorage.getItem('hometownIata');
+
+    const updateCompassUI = () => {
+        if (hometownIata) {
+            setupDiv.style.display = 'none';
+            displayDiv.style.display = 'flex';
+            calculateCompassStats(hometownIata, allFlights, airportData);
+        } else {
+            setupDiv.style.display = 'flex';
+            displayDiv.style.display = 'none';
+        }
+    };
+
+    // Dialog Logic
+    setBtn.onclick = () => { dialog.show(); };
+    changeBtn.onclick = () => { dialog.show(); };
+    dialogCancel.onclick = () => { dialog.close(); };
+    
+    dialogSave.onclick = () => {
+        const val = hometownInput.value.toUpperCase().trim();
+        if (val && val.length === 3 && airportData.has(val)) {
+            hometownIata = val;
+            localStorage.setItem('hometownIata', hometownIata);
+            updateCompassUI();
+            dialog.close();
+        } else {
+            alert('Please enter a valid 3-letter airport code that exists in our database.');
+        }
+    };
+
+    updateCompassUI();
+}
+
+function calculateCompassStats(hometownIata, allFlights, airportData) {
+    const home = airportData.get(hometownIata);
+    if (!home) return;
+
+    document.getElementById('hometown-iata').textContent = hometownIata;
+
+    // Get all visited airports
+    const visitedIatas = new Set();
+    allFlights.forEach(f => {
+        visitedIatas.add(f.origin);
+        visitedIatas.add(f.destination);
+    });
+
+    let north = null, south = null, east = null, west = null;
+
+    visitedIatas.forEach(iata => {
+        if (iata === hometownIata) return;
+        const apt = airportData.get(iata);
+        if (!apt) return;
+
+        if (!north || apt.lat > north.lat) north = { ...apt, iata };
+        if (!south || apt.lat < south.lat) south = { ...apt, iata };
+        if (!east || apt.lng > east.lng) east = { ...apt, iata };
+        if (!west || apt.lng < west.lng) west = { ...apt, iata };
+    });
+
+    const updateLi = (id, apt) => {
+        const el = document.getElementById(id).querySelector('span');
+        if (apt) el.textContent = `${apt.name} (${apt.iata})`;
+        else el.textContent = "N/A";
+    };
+
+    updateLi('northernmost-li', north);
+    updateLi('southernmost-li', south);
+    updateLi('easternmost-li', east);
+    updateLi('westernmost-li', west);
+
+    // Draw Mini Map
+    const mapEl = document.getElementById('hometown-map');
+    if (!hometownMapInstance) {
+        hometownMapInstance = L.map(mapEl, { center: [home.lat, home.lng], zoom: 1, attributionControl: false, zoomControl: false });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(hometownMapInstance);
+    }
+    
+    // Clear old layers (simple way: remove map and recreate, or better, clear layers)
+    hometownMapInstance.eachLayer(layer => {
+        if (!!layer.toGeoJSON) hometownMapInstance.removeLayer(layer);
+    });
+
+    const colors = getThemeColors();
+    const homeMarker = L.circleMarker([home.lat, home.lng], { color: colors.primary, fillColor: colors.primary, fillOpacity: 1, radius: 5 }).addTo(hometownMapInstance).bindTooltip("HOME", {permanent:true, direction:'top'});
+
+    [north, south, east, west].forEach(pt => {
+        if (pt) {
+            L.circleMarker([pt.lat, pt.lng], { color: colors.tertiary, radius: 4 }).addTo(hometownMapInstance).bindTooltip(pt.iata);
+            L.polyline([[home.lat, home.lng], [pt.lat, pt.lng]], { color: colors.secondary, weight: 1, dashArray: '4, 4' }).addTo(hometownMapInstance);
+        }
+    });
+}
+
+
+// --- Main Calculation Function ---
+
+function calculateAndDisplayStats(allFlights, airportData) {
+    // 1. Pre-process flights
+    allFlights.forEach(flight => {
+        const origin = airportData.get(flight.origin);
+        const dest = airportData.get(flight.destination);
+        flight.distance = (origin && dest && !isNaN(origin.lat)) ? haversine(origin.lat, origin.lng, dest.lat, dest.lng) : 0;
+    });
+
+    // 2. Data Gathering
     let totalKm = 0;
     const airportVisits = new Map();
     const routeFrequency = new Map();
     const uniqueYears = new Set();
     const monthCounts = Array(12).fill(0);
     const weekdayCounts = Array(7).fill(0);
-    const yearCounts = new Map(); // NEW: Track flights per year
+    const yearCounts = new Map();
 
     const sortedFlights = [...allFlights].sort((a, b) => new Date(a.date) - new Date(b.date));
     const milestones = { 1000: 0, 10000: 0, 50000: 0, 100000: 0, 1000000: 0 };
@@ -170,19 +277,13 @@ function calculateAndDisplayStats(allFlights, airportData) {
         uniqueYears.add(year);
         monthCounts[month]++;
         weekdayCounts[weekday]++;
-        yearCounts.set(year, (yearCounts.get(year) || 0) + 1); // Increment year count
+        yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
 
-        const origin = airportData.get(flight.origin);
-        const dest = airportData.get(flight.destination);
-        let distance = 0;
-        if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
-            distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
-            totalKm += distance;
-        }
-        
-        cumulativeDistance += distance;
+        totalKm += flight.distance;
+        cumulativeDistance += flight.distance;
         chartData.push({x: flightCount, y: cumulativeDistance});
 
+        // Milestones
         for (let i = milestonesToFind.length - 1; i >= 0; i--) {
             if (cumulativeDistance >= milestonesToFind[i]) {
                 milestones[milestonesToFind[i]] = flightCount;
@@ -200,10 +301,9 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const uniqueCountries = new Set(uniqueAirports.map(iata => airportData.get(iata)?.country).filter(Boolean));
     const sortedAirports = [...airportVisits.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const sortedRoutes = [...routeFrequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
-    const totalVisits = [...airportVisits.values()].reduce((sum, count) => sum + count, 0);
     globalVisitedCountries = uniqueCountries;
 
-    // 2. DOM Updates
+    // 3. DOM Updates
     const updateText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     const updateHtml = (id, value) => { const el = document.getElementById(id); if (el) el.innerHTML = value; };
 
@@ -222,6 +322,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
     updateText('total-weeks', (totalHours / 24 / 7).toFixed(1));
     updateText('total-months', (totalHours / 24 / 30.44).toFixed(1));
 
+    // Records
     const sortedByDist = [...allFlights].filter(f => f.distance > 0).sort((a, b) => a.distance - b.distance);
     if (sortedByDist.length > 0) {
         const shortest = sortedByDist[0];
@@ -232,12 +333,12 @@ function calculateAndDisplayStats(allFlights, airportData) {
         updateText('longest-flight-dist', `${Math.round(longest.distance).toLocaleString()} km`);
     }
 
+    // Top Lists
     const topAirportsList = document.getElementById('top-airports-list');
     if (topAirportsList) {
         topAirportsList.innerHTML = '';
         sortedAirports.forEach(([iata, count]) => {
-            const percent = totalVisits > 0 ? (count / totalVisits * 100).toFixed(1) : 0;
-            topAirportsList.innerHTML += `<li><b>${iata}</b>: ${count} visits (${percent}%)</li>`;
+            topAirportsList.innerHTML += `<li><b>${iata}</b>: ${count} visits</li>`;
         });
     }
 
@@ -249,6 +350,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
         });
     }
 
+    // Milestones
     const milestonesList = document.getElementById('milestones-list');
     if (milestonesList) {
         milestonesList.innerHTML = '';
@@ -258,74 +360,56 @@ function calculateAndDisplayStats(allFlights, airportData) {
         }
     }
 
-    // 3. Charts
+    // 4. Charts
     const colors = getThemeColors();
 
-    // Distance Chart
     const chartCanvas = document.getElementById('distance-chart');
     if (chartCanvas) {
         if (distanceChartInstance) distanceChartInstance.destroy();
         distanceChartInstance = new Chart(chartCanvas, {
-            type: 'line', data: { datasets: [{
-                    label: 'Cumulative Distance', data: chartData,
-                    borderColor: colors.primary, backgroundColor: colors.primaryContainer,
-                    fill: true, tension: 0.4, pointRadius: 0
-                }]},
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-                scales: { x: { display: true, grid: { color: colors.surfaceVariant } }, y: { display: true, grid: { color: colors.surfaceVariant }, ticks: { callback: (v) => `${(v/1000).toLocaleString()}k`} } }
-            }
+            type: 'line', data: { datasets: [{ label: 'Cumulative Distance', data: chartData, borderColor: colors.primary, backgroundColor: colors.primaryContainer, fill: true, tension: 0.4, pointRadius: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { color: colors.surfaceVariant } }, y: { display: true, grid: { color: colors.surfaceVariant }, ticks: { callback: (v) => `${(v/1000).toLocaleString()}k`} } } }
         });
     }
 
-    // Seasonality Chart
     const seasonalityCanvas = document.getElementById('seasonality-chart');
     if (seasonalityCanvas) {
         if (seasonalityChartInstance) seasonalityChartInstance.destroy();
         seasonalityChartInstance = new Chart(seasonalityCanvas, {
-            type: 'bar', data: {
-                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                datasets: [{ label: 'Flights', data: monthCounts, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }]
-            },
+            type: 'bar', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], datasets: [{ label: 'Flights', data: monthCounts, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: colors.surfaceVariant } }, x: { grid: { display: false } } } }
         });
     }
 
-    // Weekday Chart
     const weekdayCanvas = document.getElementById('weekday-chart');
     if (weekdayCanvas) {
         if (weekdayChartInstance) weekdayChartInstance.destroy();
-        // Updated color to use PRIMARY to fix "wrong color" issue
         weekdayChartInstance = new Chart(weekdayCanvas, {
-            type: 'bar', data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{ label: 'Flights', data: [...weekdayCounts.slice(1), weekdayCounts[0]], backgroundColor: colors.primaryContainer, borderColor: colors.primary, borderWidth: 1 }]
-            },
+            type: 'bar', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Flights', data: [...weekdayCounts.slice(1), weekdayCounts[0]], backgroundColor: colors.primaryContainer, borderColor: colors.primary, borderWidth: 1 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: colors.surfaceVariant } }, x: { grid: { display: false } } } }
         });
     }
 
-    // NEW: Flights by Year Chart
+    // Corrected ID: yearly-chart
     const yearCanvas = document.getElementById('yearly-chart');
     if (yearCanvas) {
-        if (yearChartInstance) yearChartInstance.destroy();
-        const sortedYears = [...uniqueYears].sort((a, b) => a - b); // Sort ascending for chart
+        if (yearlyChartInstance) yearlyChartInstance.destroy();
+        const sortedYears = [...uniqueYears].sort((a, b) => a - b);
         const yearData = sortedYears.map(y => yearCounts.get(y) || 0);
-        
-        yearChartInstance = new Chart(yearCanvas, {
-            type: 'bar', data: {
-                labels: sortedYears,
-                datasets: [{ label: 'Flights', data: yearData, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }]
-            },
+        yearlyChartInstance = new Chart(yearCanvas, {
+            type: 'bar', data: { labels: sortedYears, datasets: [{ label: 'Flights', data: yearData, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: colors.surfaceVariant } }, x: { grid: { display: false } } } }
         });
     }
 
     createCountryMap(uniqueCountries);
     createSunburstChart(allFlights, airportData);
+    initCompassStat(allFlights, airportData); // Initialize Compass
 
     return { uniqueYears: [...uniqueYears].sort((a, b) => b - a) };
 }
 
+// --- Theme Change Listener ---
 window.addEventListener('themeChanged', () => {
     const colors = getThemeColors();
 
@@ -342,7 +426,7 @@ window.addEventListener('themeChanged', () => {
     updateChartColors(distanceChartInstance, colors.primaryContainer, colors.primary);
     updateChartColors(seasonalityChartInstance, colors.secondaryContainer, colors.secondary);
     updateChartColors(weekdayChartInstance, colors.primaryContainer, colors.primary);
-    updateChartColors(yearChartInstance, colors.secondaryContainer, colors.secondary);
+    updateChartColors(yearlyChartInstance, colors.secondaryContainer, colors.secondary);
 
     if (sunburstChartInstance) {
         sunburstChartInstance.setOption({
