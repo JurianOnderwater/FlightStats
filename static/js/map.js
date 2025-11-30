@@ -24,20 +24,36 @@ function getGreatCirclePoints(start, end) {
     return points;
 }
 
+/**
+ * Helper to get current CSS variables
+ */
+function getThemeColors() {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+        primary: styles.getPropertyValue('--md-sys-color-primary').trim(),
+        primaryContainer: styles.getPropertyValue('--md-sys-color-primary-container').trim(),
+        onPrimaryContainer: styles.getPropertyValue('--md-sys-color-on-primary-container').trim(),
+        secondary: styles.getPropertyValue('--md-sys-color-secondary').trim(),
+        secondaryContainer: styles.getPropertyValue('--md-sys-color-secondary-container').trim(),
+        tertiary: styles.getPropertyValue('--md-sys-color-tertiary').trim(),
+        tertiaryContainer: styles.getPropertyValue('--md-sys-color-tertiary-container').trim(),
+        surfaceVariant: styles.getPropertyValue('--md-sys-color-surface-variant').trim(),
+        surfaceContainerLow: styles.getPropertyValue('--md-sys-color-surface-container-low').trim(),
+        surfaceBorder: styles.getPropertyValue('--md-sys-color-surface').trim(),
+        compYellow: styles.getPropertyValue('--md-sys-color-primary-comp-yellow').trim(),
+        compPurple: styles.getPropertyValue('--md-sys-color-primary-comp-purple').trim()
+    };
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Initialise Viewers ---
     const map = L.map('map', {
-        // prevent dragging the map outside the world bounds
         maxBounds: [[-90, -180], [90, 180]]
     }).setView([20, 0], 2);
     
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
     }).addTo(map);
-    // L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    //     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-    // }).addTo(map);
 
     // --- Initialise ECharts Globe View ---
     const globeContainer = document.getElementById('cesium-container'); // Reusing the old container
@@ -47,9 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const layersByYear = {};
     const loader = document.getElementById('loader-container');
     let allEchartsRoutes = []; // To store flight data for ECharts
+    let longestFlightLayer = null;
+    let shortestFlightLayer = null;
     const viewSwitch = document.getElementById('view-switch');
     const leafletContainer = document.getElementById('map');
-    // const cesiumContainer = document.getElementById('cesium-container');
 
     viewSwitch.addEventListener('input', () => {
         if (!viewSwitch.selected) {
@@ -90,10 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     console.log(`Finished parsing and cached ${airportData.size} airports.`);
                     
-
                     const allFlights = await getAllFlights();
                     const { uniqueYears } = calculateAndDisplayStats(allFlights, airportData);
                     const aggregatedRoutes = new Map();
+                    const colors = getThemeColors(); // Get initial colors
 
                     // --- Prepare Data and Draw for Both Views ---
                     allFlights.forEach(flight => {
@@ -110,15 +127,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
-                            const lineColour = '#006d39';
+                            const lineColour = colors.primary; // Use theme color
                             const lineWeight = routeData.count
                             const year = new Date(flight.date).getFullYear();
                             
                             const startPointL = L.latLng(origin.lat, origin.lng);
                             const endPointL = L.latLng(dest.lat, dest.lng);
                             const curvePoints = getGreatCirclePoints(startPointL, endPointL);
-                            const leafletLine = L.polyline(curvePoints, { color: lineColour, weight: lineWeight, opacity: 0.7 });
-                            const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8 };
+                            const leafletLine = L.polyline(curvePoints, { color: lineColour, weight: lineWeight, opacity: 0.7, className: 'flight-line' }); // Added class for easier selection if needed
+                            const markerOptions = { radius: 3, fillColor: lineColour, color: "#000", weight: 0.5, opacity: 1, fillOpacity: 0.8, className: 'flight-dot' };
                             const tooltipOptions = { permanent: true, direction: 'top', offset: [0, -5], className: 'airport-label' };
                             
                             const startDot = L.circleMarker(startPointL, markerOptions).bindTooltip(flight.origin, tooltipOptions).openTooltip();
@@ -126,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             const leafletLayer = L.featureGroup([leafletLine, startDot, endDot]);
 
                             if (!layersByYear[year]) layersByYear[year] = [];
-                            layersByYear[year].push({ leaflet: leafletLayer });
+                            layersByYear[year].push({ leaflet: leafletLayer, line: leafletLine, dots: [startDot, endDot] });
 
                             const lineWeightDouble = lineWeight * 2;
                             allEchartsRoutes.push({
@@ -143,11 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         globe: {
                             baseTexture: '/static/textures/world.topo.bathy.200401.desat2.jpg',
                             heightTexture: '/static/textures/bathymetry_bw_composite_4k.jpg',
-                            // displacementScale: 0.04,
-                            // displacementQuality: 'ultra',
                             shading: 'lambert',
                             light: { ambient: { intensity: 0.5 }, main: { intensity: 0.6 } },
-                            // postEffect: { enable: true, bloom: { threshold: 0.5, strength: 0.5, radius: 0.5 } },
                             viewControl: { autoRotate: true, autoRotateSpeed: 1.1 }
                         },
                         series: {
@@ -155,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             coordinateSystem: 'globe',
                             blendMode: 'lighter',
                             effect: { show: true, constantSpeed: 5 },
-                            lineStyle: { color: '#006d39', opacity: 0.7 },
+                            lineStyle: { color: colors.primary, opacity: 0.7 }, // Use theme color
                             data: allEchartsRoutes.map(route => ({
                                 coords: route.coords,
                                 lineStyle: {
@@ -195,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // --- Find and Draw Longest/Shortest Flights ---
                     if (allFlights.length >= 2) {
-                        // First ensure every flight has a distance
                         allFlights.forEach(flight => {
                             if (typeof flight.distance === 'undefined') {
                                 const origin = airportData.get(flight.origin);
@@ -210,14 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const sortedByDist = [...allFlights].filter(f => f.distance > 0).sort((a, b) => a.distance - b.distance);
                         
-
                         if (sortedByDist.length > 0) {
                             const shortestFlight = sortedByDist[0];
                             const longestFlight = sortedByDist[sortedByDist.length - 1];
-
-                            const themeStyles = getComputedStyle(document.documentElement);
-                            const longColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-yellow').trim();
-                            const shortColor = themeStyles.getPropertyValue('--md-sys-color-primary-comp-purple').trim();
 
                             // Draw the longest flight
                             if (longestFlight) {
@@ -226,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const startPoint = L.latLng(origin.lat, origin.lng);
                                 const endPoint = L.latLng(dest.lat, dest.lng);
                                 const curvePoints = getGreatCirclePoints(startPoint, endPoint);
-                                L.polyline(curvePoints, { color: longColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                                longestFlightLayer = L.polyline(curvePoints, { color: colors.compYellow, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
                             }
 
                             // Draw the shortest flight
@@ -236,13 +244,43 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const startPoint = L.latLng(origin.lat, origin.lng);
                                 const endPoint = L.latLng(dest.lat, dest.lng);
                                 const curvePoints = getGreatCirclePoints(startPoint, endPoint);
-                                L.polyline(curvePoints, { color: longColor, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
+                                shortestFlightLayer = L.polyline(curvePoints, { color: colors.compPurple, weight: 4, opacity: 1, dashArray: '5, 5' }).addTo(map);
                             }
                         }
                     }
                     
                     if (loader) loader.style.display = 'none';
+
+                    // --- Theme Change Listener ---
+                    window.addEventListener('themeChanged', () => {
+                        const newColors = getThemeColors();
+
+                        // Update Leaflet layers
+                        for (const year in layersByYear) {
+                            layersByYear[year].forEach(item => {
+                                item.line.setStyle({ color: newColors.primary });
+                                item.dots.forEach(dot => {
+                                    dot.setStyle({ fillColor: newColors.primary });
+                                });
+                            });
+                        }
+
+                        // Update Longest/Shortest
+                        if (longestFlightLayer) longestFlightLayer.setStyle({ color: newColors.compYellow });
+                        if (shortestFlightLayer) shortestFlightLayer.setStyle({ color: newColors.compPurple });
+
+                        // Update Globe
+                        globeChart.setOption({
+                            series: {
+                                lineStyle: { color: newColors.primary }
+                            }
+                        });
+                    });
                 }
             });
+        })
+        .catch(error => {
+            console.error("Failed to fetch airports.csv:", error);
+            if (loader) loader.style.display = 'none';
         });
 });
