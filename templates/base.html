@@ -5,20 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:wght@400;500;700&family=Roboto+Serif:wght@400;700&display=swap">
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
+    <link rel="stylesheet" id="theme-link" href="{{ url_for('static', filename='css/themes/green.css') }}">
+
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <link rel="icon" href="{{ url_for('static', filename='assets/favicon.svg') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
     <title>{% block title %}FlightStats{% endblock %}</title>
 </head>
 <body>
     <div class="app-container">
+        <md-icon-button class="theme-toggle-btn" id="theme-btn">
+            <span class="material-symbols-outlined">palette</span>
+        </md-icon-button>
+
         <main>
             {% with messages = get_flashed_messages() %}
                 {% if messages %}
                     <div class="flash-messages">
-                        {% for message in messages %}
-                            <p>{{ message }}</p>
-                        {% endfor %}
+                        {% for message in messages %}<p>{{ message }}</p>{% endfor %}
                     </div>
                 {% endif %}
             {% endwith %}
@@ -26,8 +32,8 @@
             {% block content %}{% endblock %}
         </main>
         <footer>
-            <md-fab variant="secondary" size="small" label="Add Flight" aria-label="Add Flight" id="add-flight-fab" data-url="{{ url_for('add_flight') }}">
-                <span slot="icon" class="material-symbols-outlined">travel</span>
+            <md-fab variant="tertiary" size="small" aria-label="Add Flight" id="add-flight-fab" data-url="{{ url_for('add_flight') }}">
+                <span slot="icon" class="material-symbols-outlined">add</span>
             </md-fab>
             <div class="segmented-nav">
                 <a href="{{ url_for('index') }}" class="nav-segment {% if request.endpoint == 'index' %}active{% endif %}">
@@ -43,12 +49,97 @@
         </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js" defer></script>
-    <script src="{{ url_for('static', filename='js/database.js') }}"></script>
+    <md-dialog id="theme-dialog">
+        <div slot="headline">Choose Theme</div>
+        <form slot="content" id="theme-form" method="dialog">
+            <label style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <span>Dark Mode</span>
+                <md-switch id="dark-mode-switch"></md-switch>
+            </label>
+            <md-divider></md-divider>
+            <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <md-radio name="theme" value="green" checked></md-radio> Forest Green
+                </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <md-radio name="theme" value="blue"></md-radio> Slate Blue
+                </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <md-radio name="theme" value="orange"></md-radio> Deep Orange
+                </label>
+                <label style="display:flex; align-items:center; gap:8px;">
+                    <md-radio name="theme" value="purple"></md-radio> Royal Purple
+                </label>
+            </div>
+        </form>
+        <div slot="actions">
+            <md-text-button form="theme-form" value="close">Close</md-text-button>
+        </div>
+    </md-dialog>
 
+    <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
+    <script src="{{ url_for('static', filename='js/database.js') }}"></script>
     <script type="module" src="https://esm.run/@material/web/all.js"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const themeBtn = document.getElementById('theme-btn');
+            const themeDialog = document.getElementById('theme-dialog');
+            const darkModeSwitch = document.getElementById('dark-mode-switch');
+            const themeRadios = document.querySelectorAll('md-radio[name="theme"]');
+            const themeLink = document.getElementById('theme-link');
+
+            // Load saved preferences
+            const savedTheme = localStorage.getItem('appTheme') || 'green';
+            const savedDarkMode = localStorage.getItem('appDarkMode') === 'true';
+
+            // Apply saved settings
+            applyTheme(savedTheme);
+            if (savedDarkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                darkModeSwitch.selected = true;
+            }
+
+            // Update UI to match saved settings
+            themeRadios.forEach(radio => {
+                if (radio.value === savedTheme) radio.checked = true;
+            });
+
+            // Open Dialog
+            themeBtn.addEventListener('click', () => {
+                themeDialog.show();
+            });
+
+            // Handle Dark Mode Toggle
+            darkModeSwitch.addEventListener('change', () => {
+                const isDark = darkModeSwitch.selected;
+                if (isDark) {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                } else {
+                    document.documentElement.removeAttribute('data-theme');
+                }
+                localStorage.setItem('appDarkMode', isDark);
+            });
+
+            // Handle Color Theme Change
+            themeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.checked) {
+                        applyTheme(radio.value);
+                        localStorage.setItem('appTheme', radio.value);
+                    }
+                });
+            });
+
+            function applyTheme(themeName) {
+                // We construct the URL manually to work with Flask's static folder structure
+                // Assuming static/css/themes/[name].css
+                themeLink.href = `/static/css/themes/${themeName}.css`;
+            }
+        });
+    </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>
