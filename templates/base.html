@@ -13,12 +13,55 @@
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
     <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}">
     <title>{% block title %}FlightStats{% endblock %}</title>
+
+    <style>
+        /* Container to position the button and menu together */
+        .theme-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 2000;
+        }
+        /* Hide checkmarks on non-active themes */
+        md-menu-item:not(.active) .theme-check {
+            visibility: hidden;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
-        <md-icon-button class="theme-toggle-btn" id="theme-btn">
-            <span class="material-symbols-outlined">palette</span>
-        </md-icon-button>
+        
+        <div class="theme-container">
+            <md-icon-button id="theme-menu-anchor">
+                <span class="material-symbols-outlined">palette</span>
+            </md-icon-button>
+            
+            <md-menu id="theme-menu" anchor="theme-menu-anchor">
+                <md-menu-item keep-open>
+                    <div slot="headline">Dark Mode</div>
+                    <md-switch slot="end" id="dark-mode-switch"></md-switch>
+                </md-menu-item>
+                
+                <md-divider></md-divider>
+                
+                <md-menu-item class="theme-item" data-value="green">
+                    <span slot="start" class="material-symbols-outlined theme-check">check</span>
+                    <div slot="headline">Forest Green</div>
+                </md-menu-item>
+                <md-menu-item class="theme-item" data-value="blue">
+                    <span slot="start" class="material-symbols-outlined theme-check">check</span>
+                    <div slot="headline">Slate Blue</div>
+                </md-menu-item>
+                <md-menu-item class="theme-item" data-value="orange">
+                    <span slot="start" class="material-symbols-outlined theme-check">check</span>
+                    <div slot="headline">Deep Orange</div>
+                </md-menu-item>
+                <md-menu-item class="theme-item" data-value="purple">
+                    <span slot="start" class="material-symbols-outlined theme-check">check</span>
+                    <div slot="headline">Royal Purple</div>
+                </md-menu-item>
+            </md-menu>
+        </div>
 
         <main>
             {% with messages = get_flashed_messages() %}
@@ -49,34 +92,6 @@
         </footer>
     </div>
 
-    <md-dialog id="theme-dialog">
-        <div slot="headline">Choose Theme</div>
-        <form slot="content" id="theme-form" method="dialog">
-            <label style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                <span>Dark Mode</span>
-                <md-switch id="dark-mode-switch"></md-switch>
-            </label>
-            <md-divider></md-divider>
-            <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
-                <label style="display:flex; align-items:center; gap:8px;">
-                    <md-radio name="theme" value="green" checked></md-radio> Forest Green
-                </label>
-                <label style="display:flex; align-items:center; gap:8px;">
-                    <md-radio name="theme" value="blue"></md-radio> Slate Blue
-                </label>
-                <label style="display:flex; align-items:center; gap:8px;">
-                    <md-radio name="theme" value="orange"></md-radio> Deep Orange
-                </label>
-                <label style="display:flex; align-items:center; gap:8px;">
-                    <md-radio name="theme" value="purple"></md-radio> Royal Purple
-                </label>
-            </div>
-        </form>
-        <div slot="actions">
-            <md-text-button form="theme-form" value="close">Close</md-text-button>
-        </div>
-    </md-dialog>
-
     <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
     <script src="{{ url_for('static', filename='js/database.js') }}"></script>
     <script type="module" src="https://esm.run/@material/web/all.js"></script>
@@ -84,15 +99,14 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const themeBtn = document.getElementById('theme-btn');
-            const themeDialog = document.getElementById('theme-dialog');
+            const themeBtn = document.getElementById('theme-menu-anchor');
+            const themeMenu = document.getElementById('theme-menu');
             const darkModeSwitch = document.getElementById('dark-mode-switch');
-            const themeRadios = document.querySelectorAll('md-radio[name="theme"]');
+            const themeItems = document.querySelectorAll('.theme-item');
             const themeLink = document.getElementById('theme-link');
 
-            // Helper to notify other scripts (like stats.js) that colors changed
+            // Notify charts when theme changes
             function notifyThemeChange() {
-                // We use a small timeout to ensure the CSS is fully applied by the browser
                 setTimeout(() => {
                     window.dispatchEvent(new CustomEvent('themeChanged'));
                 }, 50);
@@ -102,24 +116,22 @@
             const savedTheme = localStorage.getItem('appTheme') || 'green';
             const savedDarkMode = localStorage.getItem('appDarkMode') === 'true';
 
-            // Apply saved settings
+            // Apply initial settings
             applyTheme(savedTheme);
             if (savedDarkMode) {
                 document.documentElement.setAttribute('data-theme', 'dark');
                 darkModeSwitch.selected = true;
             }
 
-            // Update UI
-            themeRadios.forEach(radio => {
-                if (radio.value === savedTheme) radio.checked = true;
-            });
+            // Update UI to show active theme
+            updateActiveItem(savedTheme);
 
-            // Open Dialog
+            // Toggle Menu
             themeBtn.addEventListener('click', () => {
-                themeDialog.show();
+                themeMenu.open = !themeMenu.open;
             });
 
-            // Handle Dark Mode Toggle
+            // Handle Dark Mode
             darkModeSwitch.addEventListener('change', () => {
                 const isDark = darkModeSwitch.selected;
                 if (isDark) {
@@ -128,22 +140,33 @@
                     document.documentElement.removeAttribute('data-theme');
                 }
                 localStorage.setItem('appDarkMode', isDark);
-                notifyThemeChange(); // <-- Notify charts
+                notifyThemeChange();
             });
 
-            // Handle Color Theme Change
-            themeRadios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    if (radio.checked) {
-                        applyTheme(radio.value);
-                        localStorage.setItem('appTheme', radio.value);
-                    }
+            // Handle Color Themes
+            themeItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const theme = item.dataset.value;
+                    applyTheme(theme);
+                    updateActiveItem(theme);
+                    localStorage.setItem('appTheme', theme);
+                    // Close menu on selection
+                    themeMenu.open = false; 
                 });
             });
 
+            function updateActiveItem(activeTheme) {
+                themeItems.forEach(item => {
+                    if (item.dataset.value === activeTheme) {
+                        item.classList.add('active');
+                    } else {
+                        item.classList.remove('active');
+                    }
+                });
+            }
+
             function applyTheme(themeName) {
                 themeLink.href = `/static/css/themes/${themeName}.css`;
-                // When the new CSS file finishes loading, notify charts
                 themeLink.onload = notifyThemeChange;
             }
         });
