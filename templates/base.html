@@ -90,6 +90,14 @@
             const themeRadios = document.querySelectorAll('md-radio[name="theme"]');
             const themeLink = document.getElementById('theme-link');
 
+            // Helper to notify other scripts (like stats.js) that colors changed
+            function notifyThemeChange() {
+                // We use a small timeout to ensure the CSS is fully applied by the browser
+                setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('themeChanged'));
+                }, 50);
+            }
+
             // Load saved preferences
             const savedTheme = localStorage.getItem('appTheme') || 'green';
             const savedDarkMode = localStorage.getItem('appDarkMode') === 'true';
@@ -101,7 +109,7 @@
                 darkModeSwitch.selected = true;
             }
 
-            // Update UI to match saved settings
+            // Update UI
             themeRadios.forEach(radio => {
                 if (radio.value === savedTheme) radio.checked = true;
             });
@@ -120,6 +128,7 @@
                     document.documentElement.removeAttribute('data-theme');
                 }
                 localStorage.setItem('appDarkMode', isDark);
+                notifyThemeChange(); // <-- Notify charts
             });
 
             // Handle Color Theme Change
@@ -133,9 +142,9 @@
             });
 
             function applyTheme(themeName) {
-                // We construct the URL manually to work with Flask's static folder structure
-                // Assuming static/css/themes/[name].css
                 themeLink.href = `/static/css/themes/${themeName}.css`;
+                // When the new CSS file finishes loading, notify charts
+                themeLink.onload = notifyThemeChange;
             }
         });
     </script>
