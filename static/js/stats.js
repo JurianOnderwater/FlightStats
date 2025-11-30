@@ -4,15 +4,23 @@
 let distanceChartInstance = null;
 let seasonalityChartInstance = null;
 let weekdayChartInstance = null;
-let yearlyChartInstance = null; // Updated name
+let yearChartInstance = null;
 let sunburstChartInstance = null;
 let countryMapInstance = null;
 let countryGeoJsonLayer = null;
-let hometownMapInstance = null; // New for compass
 let globalVisitedCountries = new Set();
 
-// --- Helpers (Ensure these are defined if not in utils.js) ---
+// Global references for Hometown Map elements
+let hometownMapInstance = null;
+let hometownLayers = {
+    homeMarker: null,
+    destMarkers: [],
+    lines: []
+};
 
+/**
+ * Calculates distance between two lat/lng points in km using the Haversine formula.
+ */
 function haversine(lat1, lon1, lat2, lon2) {
     const R = 6371; 
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -24,6 +32,9 @@ function haversine(lat1, lon1, lat2, lon2) {
     return R * c;
 }
 
+/**
+ * Helper to get current CSS variables
+ */
 function getThemeColors() {
     const styles = getComputedStyle(document.documentElement);
     return {
@@ -35,12 +46,10 @@ function getThemeColors() {
         tertiary: styles.getPropertyValue('--md-sys-color-tertiary').trim(),
         tertiaryContainer: styles.getPropertyValue('--md-sys-color-tertiary-container').trim(),
         surfaceVariant: styles.getPropertyValue('--md-sys-color-surface-variant').trim(),
+        surfaceContainerLow: styles.getPropertyValue('--md-sys-color-surface-container-low').trim(),
         surfaceBorder: styles.getPropertyValue('--md-sys-color-surface').trim()
     };
 }
-
-
-// --- Specific Chart Logic ---
 
 async function createCountryMap(visitedCountries) {
     const mapElement = document.getElementById('country-map');
@@ -48,7 +57,7 @@ async function createCountryMap(visitedCountries) {
 
     if (!countryMapInstance) {
         countryMapInstance = L.map(mapElement, {
-            center: [20, 0], zoom: 1, attributionControl: false,
+            center: [20, 0], zoom: 2, attributionControl: false,
             zoomControl: false, dragging: true, scrollWheelZoom: true
         });
     }
@@ -57,10 +66,12 @@ async function createCountryMap(visitedCountries) {
         const colors = getThemeColors();
         let countryCode = feature.properties.ISO_A2;
         if (countryCode === '-99' || !countryCode) countryCode = feature.properties.ISO_A2_EH;
+        
         const isVisited = countryCode && visitedCountries.has(countryCode.toUpperCase());
         return {
             fillColor: isVisited ? colors.onPrimaryContainer : colors.surfaceVariant,
-            weight: 1, opacity: 1, color: colors.primary, fillOpacity: 0.8
+            weight: 1, opacity: 1,
+            color: colors.primary, fillOpacity: 0.8
         };
     };
 
@@ -77,6 +88,10 @@ async function createCountryMap(visitedCountries) {
     }
 }
 
+
+/**
+ * Creates/Updates Sunburst Chart
+ */
 function createSunburstChart(allFlights, airportData) {
     const chartDom = document.getElementById('sunburst-chart');
     if (!chartDom) return;
@@ -120,9 +135,7 @@ function createSunburstChart(allFlights, airportData) {
         series: {
             type: 'sunburst', data: echartsData, radius: [0, '95%'], sort: undefined,
             emphasis: { focus: 'ancestor' },
-            levels: [
-                {}, 
-                { r0: '15%', r: '40%', itemStyle: { borderWidth: 2, borderColor: colors.surfaceBorder }, label: { rotate: 'tangential' } },
+            levels: [{}, { r0: '15%', r: '40%', itemStyle: { borderWidth: 2, borderColor: colors.surfaceBorder }, label: { rotate: 'tangential' } },
                 { r0: '40%', r: '70%', itemStyle: { borderColor: colors.surfaceBorder }, label: { align: 'right' } },
                 { r0: '70%', r: '72%', label: { position: 'outside', padding: 3, silent: false }, itemStyle: { borderWidth: 3, borderColor: colors.surfaceBorder } }
             ]
@@ -131,7 +144,7 @@ function createSunburstChart(allFlights, airportData) {
     sunburstChartInstance.setOption(option);
 }
 
-// --- NEW: Compass / Hometown Stats Logic ---
+// --- Compass / Hometown Stats Logic ---
 function initCompassStat(allFlights, airportData) {
     const container = document.getElementById('hometown-card-content');
     if (!container) return;
@@ -141,12 +154,10 @@ function initCompassStat(allFlights, airportData) {
     const setBtn = document.getElementById('set-hometown-btn');
     const changeBtn = document.getElementById('change-hometown-btn');
     const dialog = document.getElementById('hometown-dialog');
-    const dialogForm = document.getElementById('hometown-form');
     const dialogCancel = document.querySelector('md-text-button[value="cancel"]');
     const dialogSave = document.querySelector('md-filled-button[value="save"]');
     const hometownInput = document.getElementById('hometown-input');
     
-    // Load saved hometown
     let hometownIata = localStorage.getItem('hometownIata');
 
     const updateCompassUI = () => {
@@ -160,7 +171,6 @@ function initCompassStat(allFlights, airportData) {
         }
     };
 
-    // Dialog Logic
     setBtn.onclick = () => { dialog.show(); };
     changeBtn.onclick = () => { dialog.show(); };
     dialogCancel.onclick = () => { dialog.close(); };
@@ -186,7 +196,6 @@ function calculateCompassStats(hometownIata, allFlights, airportData) {
 
     document.getElementById('hometown-iata').textContent = hometownIata;
 
-    // Get all visited airports
     const visitedIatas = new Set();
     allFlights.forEach(f => {
         visitedIatas.add(f.origin);
@@ -224,34 +233,47 @@ function calculateCompassStats(hometownIata, allFlights, airportData) {
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(hometownMapInstance);
     }
     
-    // Clear old layers (simple way: remove map and recreate, or better, clear layers)
+    // Clear old layers
     hometownMapInstance.eachLayer(layer => {
         if (!!layer.toGeoJSON) hometownMapInstance.removeLayer(layer);
     });
 
+    // Reset tracking arrays
+    hometownLayers.destMarkers = [];
+    hometownLayers.lines = [];
+    
+    // Ensure we set homeMarker to null before re-creating to avoid stale references
+    hometownLayers.homeMarker = null;
+
     const colors = getThemeColors();
-    const homeMarker = L.circleMarker([home.lat, home.lng], { color: colors.primary, fillColor: colors.primary, fillOpacity: 1, radius: 5 }).addTo(hometownMapInstance).bindTooltip("HOME", {permanent:true, direction:'top'});
+    
+    // Create and track Home Marker
+    hometownLayers.homeMarker = L.circleMarker([home.lat, home.lng], { color: colors.primary, fillColor: colors.primary, fillOpacity: 1, radius: 5 })
+        .addTo(hometownMapInstance)
+        .bindTooltip("HOME", {permanent:true, direction:'top'});
 
     [north, south, east, west].forEach(pt => {
         if (pt) {
-            L.circleMarker([pt.lat, pt.lng], { color: colors.tertiary, radius: 4 }).addTo(hometownMapInstance).bindTooltip(pt.iata);
-            L.polyline([[home.lat, home.lng], [pt.lat, pt.lng]], { color: colors.secondary, weight: 1, dashArray: '4, 4' }).addTo(hometownMapInstance);
+            // Create and track Dest Markers
+            const dm = L.circleMarker([pt.lat, pt.lng], { color: colors.tertiary, radius: 4 })
+                .addTo(hometownMapInstance)
+                .bindTooltip(pt.iata);
+            hometownLayers.destMarkers.push(dm);
+
+            // Create and track Lines
+            const pl = L.polyline([[home.lat, home.lng], [pt.lat, pt.lng]], { color: colors.secondary, weight: 1, dashArray: '4, 4' })
+                .addTo(hometownMapInstance);
+            hometownLayers.lines.push(pl);
         }
     });
 }
 
-
 // --- Main Calculation Function ---
 
 function calculateAndDisplayStats(allFlights, airportData) {
-    // 1. Pre-process flights
-    allFlights.forEach(flight => {
-        const origin = airportData.get(flight.origin);
-        const dest = airportData.get(flight.destination);
-        flight.distance = (origin && dest && !isNaN(origin.lat)) ? haversine(origin.lat, origin.lng, dest.lat, dest.lng) : 0;
-    });
+    if (!allFlights || allFlights.length === 0) return { uniqueYears: [] };
 
-    // 2. Data Gathering
+    // 1. Data Processing
     let totalKm = 0;
     const airportVisits = new Map();
     const routeFrequency = new Map();
@@ -279,8 +301,15 @@ function calculateAndDisplayStats(allFlights, airportData) {
         weekdayCounts[weekday]++;
         yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
 
-        totalKm += flight.distance;
-        cumulativeDistance += flight.distance;
+        const origin = airportData.get(flight.origin);
+        const dest = airportData.get(flight.destination);
+        let distance = 0;
+        if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
+            distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
+            totalKm += distance;
+        }
+        
+        cumulativeDistance += distance;
         chartData.push({x: flightCount, y: cumulativeDistance});
 
         // Milestones
@@ -301,6 +330,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
     const uniqueCountries = new Set(uniqueAirports.map(iata => airportData.get(iata)?.country).filter(Boolean));
     const sortedAirports = [...airportVisits.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
     const sortedRoutes = [...routeFrequency.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const totalVisits = [...airportVisits.values()].reduce((sum, count) => sum + count, 0);
     globalVisitedCountries = uniqueCountries;
 
     // 3. DOM Updates
@@ -338,7 +368,8 @@ function calculateAndDisplayStats(allFlights, airportData) {
     if (topAirportsList) {
         topAirportsList.innerHTML = '';
         sortedAirports.forEach(([iata, count]) => {
-            topAirportsList.innerHTML += `<li><b>${iata}</b>: ${count} visits</li>`;
+            const percent = totalVisits > 0 ? (count / totalVisits * 100).toFixed(1) : 0;
+            topAirportsList.innerHTML += `<li><b>${iata}</b>: ${count} visits (${percent}%)</li>`;
         });
     }
 
@@ -376,7 +407,10 @@ function calculateAndDisplayStats(allFlights, airportData) {
     if (seasonalityCanvas) {
         if (seasonalityChartInstance) seasonalityChartInstance.destroy();
         seasonalityChartInstance = new Chart(seasonalityCanvas, {
-            type: 'bar', data: { labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], datasets: [{ label: 'Flights', data: monthCounts, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }] },
+            type: 'bar', data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{ label: 'Flights', data: monthCounts, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }]
+            },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: colors.surfaceVariant } }, x: { grid: { display: false } } } }
         });
     }
@@ -385,26 +419,28 @@ function calculateAndDisplayStats(allFlights, airportData) {
     if (weekdayCanvas) {
         if (weekdayChartInstance) weekdayChartInstance.destroy();
         weekdayChartInstance = new Chart(weekdayCanvas, {
-            type: 'bar', data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], datasets: [{ label: 'Flights', data: [...weekdayCounts.slice(1), weekdayCounts[0]], backgroundColor: colors.primaryContainer, borderColor: colors.primary, borderWidth: 1 }] },
+            type: 'bar', data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{ label: 'Flights', data: [...weekdayCounts.slice(1), weekdayCounts[0]], backgroundColor: colors.primaryContainer, borderColor: colors.primary, borderWidth: 1 }]
+            },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: colors.surfaceVariant } }, x: { grid: { display: false } } } }
         });
     }
 
-    // Corrected ID: yearly-chart
     const yearCanvas = document.getElementById('yearly-chart');
     if (yearCanvas) {
-        if (yearlyChartInstance) yearlyChartInstance.destroy();
+        if (yearChartInstance) yearChartInstance.destroy();
         const sortedYears = [...uniqueYears].sort((a, b) => a - b);
         const yearData = sortedYears.map(y => yearCounts.get(y) || 0);
-        yearlyChartInstance = new Chart(yearCanvas, {
+        yearChartInstance = new Chart(yearCanvas, {
             type: 'bar', data: { labels: sortedYears, datasets: [{ label: 'Flights', data: yearData, backgroundColor: colors.secondaryContainer, borderColor: colors.secondary, borderWidth: 1 }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: colors.surfaceVariant } }, x: { grid: { display: false } } } }
         });
     }
-
+    
     createCountryMap(uniqueCountries);
     createSunburstChart(allFlights, airportData);
-    initCompassStat(allFlights, airportData); // Initialize Compass
+    initCompassStat(allFlights, airportData);
 
     return { uniqueYears: [...uniqueYears].sort((a, b) => b - a) };
 }
@@ -426,7 +462,7 @@ window.addEventListener('themeChanged', () => {
     updateChartColors(distanceChartInstance, colors.primaryContainer, colors.primary);
     updateChartColors(seasonalityChartInstance, colors.secondaryContainer, colors.secondary);
     updateChartColors(weekdayChartInstance, colors.primaryContainer, colors.primary);
-    updateChartColors(yearlyChartInstance, colors.secondaryContainer, colors.secondary);
+    updateChartColors(yearChartInstance, colors.secondaryContainer, colors.secondary);
 
     if (sunburstChartInstance) {
         sunburstChartInstance.setOption({
@@ -441,6 +477,22 @@ window.addEventListener('themeChanged', () => {
             if (countryCode === '-99' || !countryCode) countryCode = feature.properties.ISO_A2_EH;
             const isVisited = countryCode && globalVisitedCountries.has(countryCode.toUpperCase());
             return { fillColor: isVisited ? colors.onPrimaryContainer : colors.surfaceVariant, weight: 1, opacity: 1, color: colors.primary, fillOpacity: 0.8 };
+        });
+    }
+
+    // *** NEW: Update Hometown Map Colors ***
+    if (hometownMapInstance && hometownLayers.homeMarker) {
+        // Update Home Marker
+        hometownLayers.homeMarker.setStyle({ color: colors.primary, fillColor: colors.primary });
+        
+        // Update Destination Markers
+        hometownLayers.destMarkers.forEach(dm => {
+            dm.setStyle({ color: colors.tertiary });
+        });
+
+        // Update Lines
+        hometownLayers.lines.forEach(line => {
+            line.setStyle({ color: colors.secondary });
         });
     }
 });
