@@ -307,6 +307,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
         if (origin && dest && !isNaN(origin.lat) && !isNaN(dest.lat)) {
             distance = haversine(origin.lat, origin.lng, dest.lat, dest.lng);
             totalKm += distance;
+            flight.distance = distance;
         }
         
         cumulativeDistance += distance;
@@ -399,7 +400,7 @@ function calculateAndDisplayStats(allFlights, airportData) {
         if (distanceChartInstance) distanceChartInstance.destroy();
         distanceChartInstance = new Chart(chartCanvas, {
             type: 'line', data: { datasets: [{ label: 'Cumulative Distance', data: chartData, borderColor: colors.primary, backgroundColor: colors.primaryContainer, fill: true, tension: 0.4, pointRadius: 0 }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: true, grid: { color: colors.surfaceVariant } }, y: { display: true, grid: { color: colors.surfaceVariant }, ticks: { callback: (v) => `${(v/1000).toLocaleString()}k`} } } }
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { type: 'linear', display: true, grid: { color: colors.surfaceVariant } }, y: { display: true, grid: { color: colors.surfaceVariant }, ticks: { callback: (v) => `${(v/1000).toLocaleString()}k`} } } }
         });
     }
 
